@@ -25,6 +25,8 @@ provider:
         - "*"
 
 functions:
+  getClassTypes:
+    handler: functions/getClassTypes.handler
   getUserProfile:
     handler: functions/getUserProfile.handler
     timeout: 120

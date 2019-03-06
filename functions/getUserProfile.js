@@ -11,7 +11,6 @@ const dynamo = new AWS.DynamoDB.DocumentClient({
     convertEmptyValues: true
 })
 
-
 let token = false
 exports.handler = async (event, context, callback) => {
   context.callbackWaitsForEmptyEventLoop = false

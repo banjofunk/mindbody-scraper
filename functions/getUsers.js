@@ -7,7 +7,7 @@ const sqs = new AWS.SQS({ region: 'us-west-2' });
 const qs = require('querystring')
 
 let token = false
-exports.handler = async (event, context, callback) => {
+exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
   token = token || await getToken()
 

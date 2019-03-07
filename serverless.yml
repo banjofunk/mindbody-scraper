@@ -5,19 +5,26 @@ provider:
   runtime: nodejs8.10
   region: us-west-2
   environment:
+    classTypeQueueUrl:
+      "Ref": classTypeQueue
     classEventQueueUrl:
       "Ref": classEventQueue
     classEventUserQueueUrl:
       "Ref": classEventUserQueue
     clientQueueUrl:
       "Ref": clientQueue
+    pricingDetailQueueUrl:
+      "Ref": pricingDetailQueue
   iamRoleStatements:
     - Effect: Allow
       Action:
         - dynamodb:*
       Resource:
         - "${self:resources.Outputs.ClassEventsTable.Value}"
+        - "${self:resources.Outputs.ClassCategoriesTable.Value}"
+        - "${self:resources.Outputs.ClassTypesTable.Value}"
         - "${self:resources.Outputs.ClientsTable.Value}"
+        - "${self:resources.Outputs.PricingDetailsTable.Value}"
     - Effect: Allow
       Action:
         - sqs:*
@@ -25,11 +32,34 @@ provider:
         - "*"
 
 functions:
+  getPricingDetails:
+    handler: functions/getPricingDetails.handler
+    timeout: 120
+    reservedConcurrency: 20
+    events:
+      - sqs:
+          batchSize: 10
+          arn:
+            Fn::GetAtt: [ pricingDetailQueue, Arn ]
+  getPricing:
+    handler: functions/getPricing.handler
+    timeout: 120
+  getClassTypeDetails:
+    handler: functions/getClassTypeDetails.handler
+    timeout: 120
+    reservedConcurrency: 20
+    events:
+      - sqs:
+          batchSize: 10
+          arn:
+            Fn::GetAtt: [ classTypeQueue, Arn ]
   getClassTypes:
     handler: functions/getClassTypes.handler
+    timeout: 120
   getUserProfile:
     handler: functions/getUserProfile.handler
     timeout: 120
+    reservedConcurrency: 50
     events:
       - sqs:
           batchSize: 10
@@ -40,9 +70,11 @@ functions:
     timeout: 120
   getDateRange:
     handler: functions/getDateRange.handler
+    timeout: 120
   getClassEvents:
     handler: functions/getClassEvents.handler
     timeout: 120
+    reservedConcurrency: 50
     events:
       - sqs:
           batchSize: 10
@@ -51,6 +83,7 @@ functions:
   getClassEventUsers:
     handler: functions/getClassEventUsers.handler
     timeout: 120
+    reservedConcurrency: 50
     events:
       - sqs:
           batchSize: 10
@@ -71,6 +104,32 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: '2'
           WriteCapacityUnits: '2'
+    classCategoriesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ClassCategoriesTable
+        AttributeDefinitions:
+          - AttributeName: classCategoryId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: classCategoryId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: '2'
+          WriteCapacityUnits: '2'
+    classTypesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ClassTypesTable
+        AttributeDefinitions:
+          - AttributeName: classTypeId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: classTypeId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: '2'
+          WriteCapacityUnits: '2'
     clientsTable:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -80,6 +139,19 @@ resources:
             AttributeType: S
         KeySchema:
           - AttributeName: clientId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: '2'
+          WriteCapacityUnits: '2'
+    pricingDetailsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: PricingDetailsTable
+        AttributeDefinitions:
+          - AttributeName: pricingDetailId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: pricingDetailId
             KeyType: HASH
         ProvisionedThroughput:
           ReadCapacityUnits: '2'
@@ -94,17 +166,39 @@ resources:
       Properties:
         QueueName: "ClassEventUserQueue"
         VisibilityTimeout: 120
+    classTypeQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "ClassTypeQueue"
+        VisibilityTimeout: 120
     clientQueue:
       Type: "AWS::SQS::Queue"
       Properties:
         QueueName: "ClientQueue"
+        VisibilityTimeout: 120
+    pricingDetailQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "PricingDetailQueue"
         VisibilityTimeout: 120
   Outputs:
     ClassEventsTable:
       Description: The ARN for the Class Events Table
       Value:
         "Fn::GetAtt": [ classEventsTable, Arn ]
+    ClassTypesTable:
+      Description: The ARN for the Class Types Table
+      Value:
+        "Fn::GetAtt": [ classTypesTable, Arn ]
+    ClassCategoriesTable:
+      Description: The ARN for the Class Categories Table
+      Value:
+        "Fn::GetAtt": [ classCategoriesTable, Arn ]
     ClientsTable:
       Description: The ARN for the Clients Table
       Value:
         "Fn::GetAtt": [ clientsTable, Arn ]
+    PricingDetailsTable:
+      Description: The ARN for the Clients Table
+      Value:
+        "Fn::GetAtt": [ pricingDetailsTable, Arn ]

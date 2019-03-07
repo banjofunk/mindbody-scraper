@@ -12,7 +12,7 @@ const dynamo = new AWS.DynamoDB.DocumentClient({
 })
 
 let token = false
-exports.handler = async (event, context, callback) => {
+exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
   token = token || await getToken()
 

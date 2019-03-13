@@ -87,7 +87,6 @@ const writeDynamo = async (keyName, obj, tableName) => {
       ({[ob[0]]:{ Action: 'PUT', Value: ob[1] }})
     )
   )
-  console.log('attributeUpdates', attributeUpdates)
   const dynamoParamsb = {
     Key : Object.assign({[keyName]: String(obj.id)}),
     AttributeUpdates : attributeUpdates,

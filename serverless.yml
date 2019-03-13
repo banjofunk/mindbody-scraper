@@ -20,6 +20,7 @@ provider:
       Action:
         - dynamodb:*
       Resource:
+        - "${self:resources.Outputs.AppointmentTypesTable.Value}"
         - "${self:resources.Outputs.ClassEventsTable.Value}"
         - "${self:resources.Outputs.ClassCategoriesTable.Value}"
         - "${self:resources.Outputs.ClassTypesTable.Value}"
@@ -32,6 +33,9 @@ provider:
         - "*"
 
 functions:
+  getAppointmentTypes:
+    handler: functions/getAppointmentTypes.handler
+    timeout: 120
   getPricingDetails:
     handler: functions/getPricingDetails.handler
     timeout: 120
@@ -91,6 +95,19 @@ functions:
             Fn::GetAtt: [ classEventUserQueue, Arn ]
 resources:
   Resources:
+    appointmentTypesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: AppointmentTypesTable
+        AttributeDefinitions:
+          - AttributeName: appointmentTypeId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: appointmentTypeId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: '2'
+          WriteCapacityUnits: '2'
     classEventsTable:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -182,6 +199,10 @@ resources:
         QueueName: "PricingDetailQueue"
         VisibilityTimeout: 120
   Outputs:
+    AppointmentTypesTable:
+      Description: The ARN for the Appointment Types Table
+      Value:
+        "Fn::GetAtt": [ appointmentTypesTable, Arn ]
     ClassEventsTable:
       Description: The ARN for the Class Events Table
       Value:

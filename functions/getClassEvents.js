@@ -11,7 +11,6 @@ let token = false
 exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
   token = token || await getToken()
-  console.log('token', token)
 
   const records = event.Records
   let date, receiptHandle

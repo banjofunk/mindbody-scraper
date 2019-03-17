@@ -3,8 +3,11 @@ provider:
   name: aws
   profile: banjo
   runtime: nodejs8.10
+  stage: ${opt:stage, 'dev'}
   region: us-west-2
   environment:
+    region: ${self:provider.region}
+    stage: ${self:provider.stage}
     classTypeQueueUrl:
       "Ref": classTypeQueue
     classEventQueueUrl:
@@ -15,6 +18,10 @@ provider:
       "Ref": clientQueue
     pricingDetailQueueUrl:
       "Ref": pricingDetailQueue
+    productVariantQueueUrl:
+      "Ref": productVariantQueue
+    productDetailQueueUrl:
+      "Ref": productDetailQueue
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -26,13 +33,39 @@ provider:
         - "${self:resources.Outputs.ClassTypesTable.Value}"
         - "${self:resources.Outputs.ClientsTable.Value}"
         - "${self:resources.Outputs.PricingDetailsTable.Value}"
+        - "${self:resources.Outputs.ProductsTable.Value}"
     - Effect: Allow
       Action:
+        - lambda:*
         - sqs:*
       Resource:
         - "*"
 
 functions:
+  getProductsByLetter:
+    handler: functions/getProductsByLetter.handler
+    timeout: 120
+  getProductsByVariantId:
+    handler: functions/getProductsByVariantId.handler
+    timeout: 120
+    reservedConcurrency: 20
+    events:
+      - sqs:
+          batchSize: 10
+          arn:
+            Fn::GetAtt: [ productVariantQueue, Arn ]
+  getProductDetails:
+    handler: functions/getProductDetails.handler
+    timeout: 120
+    reservedConcurrency: 20
+    events:
+      - sqs:
+          batchSize: 10
+          arn:
+            Fn::GetAtt: [ productDetailQueue, Arn ]
+  getProducts:
+    handler: functions/getProducts.handler
+    timeout: 120
   getAppointmentTypes:
     handler: functions/getAppointmentTypes.handler
     timeout: 120
@@ -173,6 +206,19 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: '2'
           WriteCapacityUnits: '2'
+    productsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ProductsTable
+        AttributeDefinitions:
+          - AttributeName: productId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: productId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: '2'
+          WriteCapacityUnits: '2'
     classEventQueue:
       Type: "AWS::SQS::Queue"
       Properties:
@@ -198,6 +244,16 @@ resources:
       Properties:
         QueueName: "PricingDetailQueue"
         VisibilityTimeout: 120
+    productVariantQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "ProductVariantQueue"
+        VisibilityTimeout: 120
+    productDetailQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "ProductDetailQueue"
+        VisibilityTimeout: 120
   Outputs:
     AppointmentTypesTable:
       Description: The ARN for the Appointment Types Table
@@ -220,6 +276,10 @@ resources:
       Value:
         "Fn::GetAtt": [ clientsTable, Arn ]
     PricingDetailsTable:
-      Description: The ARN for the Clients Table
+      Description: The ARN for the Pricing Details Table
       Value:
         "Fn::GetAtt": [ pricingDetailsTable, Arn ]
+    ProductsTable:
+      Description: The ARN for the Products Table
+      Value:
+        "Fn::GetAtt": [ productsTable, Arn ]

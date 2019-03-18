@@ -30,6 +30,8 @@ provider:
       Ref: productVariantQueue
     productDetailQueueUrl:
       Ref: productDetailQueue
+    scraperQueueUrl:
+      Ref: scraperQueue
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -41,7 +43,7 @@ provider:
         - "${self:resources.Outputs.ClassTypesTable.Value}"
         - "${self:resources.Outputs.ClientsTable.Value}"
         - "${self:resources.Outputs.PricingDetailsTable.Value}"
-        - "${self:resources.Outputs.ProductsTable.Value}"
+        - Fn::GetAtt: [ productsTable, Arn ]
     - Effect: Allow
       Action:
         - ec2:*
@@ -57,6 +59,24 @@ custom:
       - Ref: PrivateSubnet
 
 functions:
+  processQueue:
+    handler: functions/processQueue.handler
+    timeout: 120
+    reservedConcurrency: 6
+    events:
+      - sqs:
+          batchSize: 5
+          arn:
+            Fn::GetAtt: [ scraperQueue, Arn ]
+  mbFetch:
+    handler: functions/mbFetch.handler
+    timeout: 120
+    vpc: ${self:custom.natVPC}
+  getToken:
+    handler: functions/getToken.handler
+    timeout: 120
+    reservedConcurrency: 2
+    vpc: ${self:custom.natVPC}
   createNat:
     handler: functions/createNat.handler
     timeout: 600
@@ -66,28 +86,15 @@ functions:
   getTest:
     handler: functions/getTest.handler
     timeout: 30
-    vpc: ${self:custom.natVPC}
   getProductsByLetter:
     handler: functions/getProductsByLetter.handler
     timeout: 120
   getProductsByVariantId:
     handler: functions/getProductsByVariantId.handler
     timeout: 120
-    reservedConcurrency: 20
-    events:
-      - sqs:
-          batchSize: 10
-          arn:
-            Fn::GetAtt: [ productVariantQueue, Arn ]
   getProductDetails:
     handler: functions/getProductDetails.handler
     timeout: 120
-    reservedConcurrency: 20
-    events:
-      - sqs:
-          batchSize: 10
-          arn:
-            Fn::GetAtt: [ productDetailQueue, Arn ]
   getProducts:
     handler: functions/getProducts.handler
     timeout: 120
@@ -279,6 +286,11 @@ resources:
       Properties:
         QueueName: "ProductDetailQueue"
         VisibilityTimeout: 120
+    scraperQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "ScraperQueue"
+        VisibilityTimeout: 20
 
 # VPC Resources
     VPC:
@@ -367,25 +379,6 @@ resources:
         ToPort: 65535
         SourceSecurityGroupId:
           Ref: SecurityGroup
-
-    # NATGateway:
-    #   Type: AWS::EC2::NatGateway
-    #   Properties:
-    #     AllocationId:
-    #       Fn::GetAtt:
-    #         - EIP
-    #         - AllocationId
-    #     SubnetId:
-    #       Ref: PublicSubnetA
-    # NatRoute:
-    #   Type: AWS::EC2::Route
-    #   Properties:
-    #     RouteTableId:
-    #       Ref: PrivateRouteTable
-    #     DestinationCidrBlock: 0.0.0.0/0
-    #     NatGatewayId:
-    #       Ref: NATGateway
-
 
   Outputs:
     AppointmentTypesTable:

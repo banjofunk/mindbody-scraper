@@ -10,16 +10,11 @@ exports.handler = async (event, context) => {
   const url = 'https://clients.mindbodyonline.com/asp/adm/adm_tlbx_prod.asp'
   const headers = { "Content-Type": "application/x-www-form-urlencoded" }
   const body = searchQueryParams(variant.id)
-  return mbFetch(url, { method, headers, body })
+  const products = await mbFetch(url, { method, headers, body })
     .then(resp => parseProducts(resp))
-    .then(products => {
-      if(products.length < 500){
-        console.log(`variant ${variant.id}:`, products.length)
-      }else{
-        console.log(`too many items for variant ${variant.id}`)
-      }
-      return sendToQueue(products, 'getProductDetails')
-    })
+  await sendToQueue(products, 'getProductDetails')
+  console.log(`variant ${variant.id}:`, products.length)
+  return Promise.resolve()
 }
 
 const parseProducts = async (resp) => {

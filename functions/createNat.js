@@ -14,10 +14,7 @@ exports.handler = async (event, context) => {
     })
   const waitParams = {
     Filter: [
-      {
-        Name: "nat-gateway-id",
-        Values: [natId]
-      }
+      { Name: "nat-gateway-id", Values: [natId] }
     ]
   }
   await ec2.waitFor('natGatewayAvailable', waitParams).promise()
@@ -26,10 +23,6 @@ exports.handler = async (event, context) => {
     GatewayId: natId,
     RouteTableId: process.env.routeTableId
    }
-  const routeData = await ec2.createRoute(routeParams).promise()
-    .then(data => {
-      console.log('routeData', data)
-      return data
-    })
-  return { natId, routeData }
+  await ec2.createRoute(routeParams).promise()
+  return Promise.resolve()
 }

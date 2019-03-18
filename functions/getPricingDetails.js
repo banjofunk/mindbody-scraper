@@ -1,46 +1,21 @@
-const fetch = require('node-fetch')
-const cheerio = require('cheerio')
+const mbFetch = require('./utils/mbFetch')
+const writeToDynamo = require('./utils/writeToDynamo')
 const dig = require('object-dig')
 const qs = require('querystring')
-const getToken = require('./utils/getToken')
-const AWS = require('aws-sdk')
-const dynamo = new AWS.DynamoDB.DocumentClient({
-    region: 'us-west-2',
-    convertEmptyValues: true
-})
 
-let token = false
 exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
-  token = token || await getToken()
+  const { id, title, active } = event.item
   const url = 'https://clients.mindbodyonline.com/AddEditPricingOption/Edit'
-
-  const records = event.Records
-  await Promise.all(records.map( async record => {
-    const { id, title, active } = JSON.parse(record.body)
-    console.log('title:', title)
-
-    const headers = {
-      "Cookie": token,
-      "User-Agent": "Mozilla/5.0 AppleWebKit/537.36 Chrome/71.0.3578.98 Safari/537.36"
-    }
-
-    const query = qs.stringify({ id })
-    const pricingDetails = await fetch(`${url}?${query}`, { headers })
-      .then(resp => resp.text())
-      .then(async resp => await parsePricingDetails(resp, active))
-    return writeDynamo('pricingDetailId', pricingDetails, 'PricingDetailsTable')
-  }))
+  console.log('title:', title)
+  const query = qs.stringify({ id })
+  const pricingDetails = await mbFetch(`${url}?${query}`)
+    .then(resp => parsePricingDetails(resp, active))
+  await writeToDynamo('pricingDetailId', pricingDetails, 'PricingDetailsTable')
   return Promise.resolve()
 }
 
-const parsePricingDetails = async (resp, active) => {
-    const $ = cheerio.load(resp)
-    const firstScript = dig($('body > script'), 0, 'firstChild', 'data') || ""
-    if(firstScript.trim() === 'mb.sessionHelpers.resetSession();'){
-      token = await getToken()
-      return false
-    }
+const parsePricingDetails = (resp, active) => {
     const regex = /var jsonModel = JSON.parse\((.*?)\);/
     const scriptStr = dig(resp.match(regex), '1') || ''
     const objStr = JSON.parse(scriptStr)
@@ -79,20 +54,4 @@ const parsePricingDetails = async (resp, active) => {
       notes: dig(obj, 'Notes'),
       taxes: dig(obj, 'Taxes', taxes => taxes.filter(tax => tax.Enabled)),
     }
-}
-
-const writeDynamo = async (keyName, obj, tableName) => {
-  const attributeUpdates = Object.assign(
-    ...Object.entries(obj).map( ob =>
-      ({[ob[0]]:{ Action: 'PUT', Value: ob[1] }})
-    )
-  )
-  const dynamoParamsb = {
-    Key : Object.assign({[keyName]: String(obj.id)}),
-    AttributeUpdates : attributeUpdates,
-    TableName : tableName
-  };
-  return await dynamo.update(dynamoParamsb).promise()
-    .then(data => { console.log('processed queue: ', obj.id) })
-    .catch(err => { console.log('dynamo err', obj.id, err) })
 }

@@ -1,72 +1,33 @@
-const fetch = require('node-fetch')
+const mbFetch = require('./utils/mbFetch')
+const sendToQueue = require('./utils/sendToQueue')
 const cheerio = require('cheerio')
-const dig = require('object-dig')
-const getToken = require('./utils/getToken')
-const AWS = require('aws-sdk')
-const sqs = new AWS.SQS({ region: 'us-west-2' });
 const qs = require('querystring')
 
-let token = false
 exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
-  token = token || await getToken()
   const method = 'post'
   const headers = {
-    "Cookie": token,
-    "User-Agent": "Mozilla/5.0 AppleWebKit/537.36 Chrome/71.0.3578.98 Safari/537.36",
     "Content-Type": "application/x-www-form-urlencoded"
   }
 
-
   const filterUrl = 'https://clients.mindbodyonline.com/paginatedpricingoptions/filter'
   const filterBody = filterQueryParams()
-  await fetch(filterUrl, { method, headers, body: filterBody })
+  await mbFetch(filterUrl, { method, headers, body: filterBody })
 
   const searchUrl = 'https://clients.mindbodyonline.com/paginatedpricingoptions/search'
   const searchBody = searchQueryParams()
-  await fetch(searchUrl, { method, headers, body: searchBody })
-    .then(resp => resp.text())
+  const pricingItems = await mbFetch(searchUrl, { method, headers, body: searchBody })
     .then(async resp => {
       const $ = cheerio.load(resp)
-      const firstScript = dig($('body > script'), 0, 'firstChild', 'data') || ""
-      if(firstScript.trim() === 'mb.sessionHelpers.resetSession();'){
-        token = await getToken()
-        return false
-      }
-      const pricingItems = $('.contract-item').get().map(item => {
+      return $('.contract-item').get().map(item => {
         return {
           id: $(item).attr('id').trim(),
           title: $(item).attr('title').trim(),
           active: !$(item).attr('class').includes('deactivated')
         }
       })
-      console.log('itemCount:', $('.contract-item').length)
-      console.log('has more pages?:', $('.pager').get().length > 0)
-
-      let entries = []
-      for (const pricingItem of pricingItems) {
-          const Id = `pricingItem-${pricingItem.id}`
-          const MessageBody = JSON.stringify(pricingItem)
-          entries.push({ Id, MessageBody })
-      }
-      console.log('entries', entries)
-
-      let i,j,entryChunk
-      for (i=0,j=entries.length; i<j; i+=10) {
-        entryChunk = entries.slice(i,i+10)
-        params = {
-          Entries: entryChunk,
-          QueueUrl: process.env.pricingDetailQueueUrl
-        };
-        await sqs.sendMessageBatch(params).promise()
-          .then(data => {
-            const passCount = data.Successful.length
-            const failCount = data.Failed.length
-            console.log('added to queue: ', `pass: ${passCount}, fail:${failCount}`)
-          })
-          .catch(err => { console.log('sqs send error:', err, err.stack) })
-      }
     })
+  await sendToQueue(pricingItems, 'getPricingDetails')
   return Promise.resolve()
 }
 

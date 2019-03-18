@@ -2,8 +2,6 @@ const cheerio = require('cheerio')
 const mbFetch = require('./utils/mbFetch')
 const sendToQueue = require('./utils/sendToQueue')
 const qs = require('querystring')
-const AWS = require('aws-sdk')
-const sqs = new AWS.SQS({ region: 'us-west-2' });
 
 exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
@@ -17,16 +15,12 @@ exports.handler = async (event, context) => {
   if(!letter.match(/^[a-zA-Z]/)){
     products = products.filter(prod => !prod.name.match(/^[a-zA-Z]/))
   }
-  if(products.length < 500){
-    console.log(`letter (${letter}): ${products.length} items`)
-  }else{
-    console.log(`too many items for letter (${letter})`)
-  }
   const productItems = products.filter(r => !r.variants)
   const variantItems = products.filter(r => r.variants)
 
   await sendToQueue(productItems, 'getProductDetails')
   await sendToQueue(variantItems, 'getProductsByVariantId')
+  console.log(`letter (${letter}): ${products.length} items`)
 
   return Promise.resolve()
 }

@@ -16,20 +16,6 @@ provider:
       Ref: PublicSubnetA
     vpcId:
       Ref: VPC
-    classTypeQueueUrl:
-      Ref: classTypeQueue
-    classEventQueueUrl:
-      Ref: classEventQueue
-    classEventUserQueueUrl:
-      Ref: classEventUserQueue
-    clientQueueUrl:
-      Ref: clientQueue
-    pricingDetailQueueUrl:
-      Ref: pricingDetailQueue
-    productVariantQueueUrl:
-      Ref: productVariantQueue
-    productDetailQueueUrl:
-      Ref: productDetailQueue
     scraperQueueUrl:
       Ref: scraperQueue
   iamRoleStatements:
@@ -37,12 +23,12 @@ provider:
       Action:
         - dynamodb:*
       Resource:
-        - "${self:resources.Outputs.AppointmentTypesTable.Value}"
-        - "${self:resources.Outputs.ClassEventsTable.Value}"
-        - "${self:resources.Outputs.ClassCategoriesTable.Value}"
-        - "${self:resources.Outputs.ClassTypesTable.Value}"
-        - "${self:resources.Outputs.ClientsTable.Value}"
-        - "${self:resources.Outputs.PricingDetailsTable.Value}"
+        - Fn::GetAtt: [ appointmentTypesTable, Arn ]
+        - Fn::GetAtt: [ classEventsTable, Arn ]
+        - Fn::GetAtt: [ classCategoriesTable, Arn ]
+        - Fn::GetAtt: [ classTypesTable, Arn ]
+        - Fn::GetAtt: [ clientsTable, Arn ]
+        - Fn::GetAtt: [ pricingDetailsTable, Arn ]
         - Fn::GetAtt: [ productsTable, Arn ]
     - Effect: Allow
       Action:
@@ -104,36 +90,18 @@ functions:
   getPricingDetails:
     handler: functions/getPricingDetails.handler
     timeout: 120
-    reservedConcurrency: 20
-    events:
-      - sqs:
-          batchSize: 10
-          arn:
-            Fn::GetAtt: [ pricingDetailQueue, Arn ]
   getPricing:
     handler: functions/getPricing.handler
     timeout: 120
   getClassTypeDetails:
     handler: functions/getClassTypeDetails.handler
     timeout: 120
-    reservedConcurrency: 20
-    events:
-      - sqs:
-          batchSize: 10
-          arn:
-            Fn::GetAtt: [ classTypeQueue, Arn ]
   getClassTypes:
     handler: functions/getClassTypes.handler
     timeout: 120
   getUserProfile:
     handler: functions/getUserProfile.handler
     timeout: 120
-    reservedConcurrency: 50
-    events:
-      - sqs:
-          batchSize: 10
-          arn:
-            Fn::GetAtt: [ clientQueue, Arn ]
   getUsers:
     handler: functions/getUsers.handler
     timeout: 120
@@ -143,23 +111,16 @@ functions:
   getClassEvents:
     handler: functions/getClassEvents.handler
     timeout: 120
-    reservedConcurrency: 50
-    events:
-      - sqs:
-          batchSize: 10
-          arn:
-            Fn::GetAtt: [ classEventQueue, Arn ]
   getClassEventUsers:
     handler: functions/getClassEventUsers.handler
     timeout: 120
-    reservedConcurrency: 50
-    events:
-      - sqs:
-          batchSize: 10
-          arn:
-            Fn::GetAtt: [ classEventUserQueue, Arn ]
 resources:
   Resources:
+    scraperQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "ScraperQueue"
+        VisibilityTimeout: 20
     appointmentTypesTable:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -251,46 +212,6 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: '2'
           WriteCapacityUnits: '2'
-    classEventQueue:
-      Type: "AWS::SQS::Queue"
-      Properties:
-        QueueName: "ClassEventQueue"
-        VisibilityTimeout: 120
-    classEventUserQueue:
-      Type: "AWS::SQS::Queue"
-      Properties:
-        QueueName: "ClassEventUserQueue"
-        VisibilityTimeout: 120
-    classTypeQueue:
-      Type: "AWS::SQS::Queue"
-      Properties:
-        QueueName: "ClassTypeQueue"
-        VisibilityTimeout: 120
-    clientQueue:
-      Type: "AWS::SQS::Queue"
-      Properties:
-        QueueName: "ClientQueue"
-        VisibilityTimeout: 120
-    pricingDetailQueue:
-      Type: "AWS::SQS::Queue"
-      Properties:
-        QueueName: "PricingDetailQueue"
-        VisibilityTimeout: 120
-    productVariantQueue:
-      Type: "AWS::SQS::Queue"
-      Properties:
-        QueueName: "ProductVariantQueue"
-        VisibilityTimeout: 120
-    productDetailQueue:
-      Type: "AWS::SQS::Queue"
-      Properties:
-        QueueName: "ProductDetailQueue"
-        VisibilityTimeout: 120
-    scraperQueue:
-      Type: "AWS::SQS::Queue"
-      Properties:
-        QueueName: "ScraperQueue"
-        VisibilityTimeout: 20
 
 # VPC Resources
     VPC:
@@ -379,33 +300,3 @@ resources:
         ToPort: 65535
         SourceSecurityGroupId:
           Ref: SecurityGroup
-
-  Outputs:
-    AppointmentTypesTable:
-      Description: The ARN for the Appointment Types Table
-      Value:
-        "Fn::GetAtt": [ appointmentTypesTable, Arn ]
-    ClassEventsTable:
-      Description: The ARN for the Class Events Table
-      Value:
-        "Fn::GetAtt": [ classEventsTable, Arn ]
-    ClassTypesTable:
-      Description: The ARN for the Class Types Table
-      Value:
-        "Fn::GetAtt": [ classTypesTable, Arn ]
-    ClassCategoriesTable:
-      Description: The ARN for the Class Categories Table
-      Value:
-        "Fn::GetAtt": [ classCategoriesTable, Arn ]
-    ClientsTable:
-      Description: The ARN for the Clients Table
-      Value:
-        "Fn::GetAtt": [ clientsTable, Arn ]
-    PricingDetailsTable:
-      Description: The ARN for the Pricing Details Table
-      Value:
-        "Fn::GetAtt": [ pricingDetailsTable, Arn ]
-    ProductsTable:
-      Description: The ARN for the Products Table
-      Value:
-        "Fn::GetAtt": [ productsTable, Arn ]

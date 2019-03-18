@@ -5,30 +5,19 @@ exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
   const params = {
     Filter: [
-      {
-        Name: "vpc-id",
-        Values: [ process.env.vpcId ]
-      },
-      {
-        Name: "state",
-        Values: [ "pending", "available" ]
-      }
+      { Name: "vpc-id", Values: [ process.env.vpcId ] },
+      { Name: "state", Values: [ "pending", "available" ] }
     ]
   }
   const natIds = await ec2.describeNatGateways(params).promise()
     .then(data => {
       return data.NatGateways.map(nat => nat.NatGatewayId)
     })
-  console.log('natIds', natIds)
-
   const routeTableIds = []
   await Promise.all(natIds.map(natId => {
     const params = {
       Filters: [
-        {
-          Name: "route.nat-gateway-id",
-          Values: [ natId ]
-        }
+        { Name: "route.nat-gateway-id", Values: [ natId ] }
       ]
     }
     return ec2.describeRouteTables(params).promise()
@@ -39,8 +28,6 @@ exports.handler = async (event, context) => {
         return Promise.resolve()
       })
   }))
-  console.log('routeTableIds', routeTableIds)
-
   await Promise.all(routeTableIds.map(routeTableId => {
     var params = {
       DestinationCidrBlock: "0.0.0.0/0",

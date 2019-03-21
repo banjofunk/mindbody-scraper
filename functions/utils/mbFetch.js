@@ -3,7 +3,7 @@ const lambda = new AWS.Lambda()
 
 module.exports = async (input, init={}) => {
   params = {
-    FunctionName: `mindbody-scraper-${process.env.stage}-mbFetch`,
+    FunctionName: `mindbody-scraper-auth-${process.env.stage}-mbFetch`,
     Payload: JSON.stringify({ input, init })
   }
   return await lambda.invoke(params).promise()

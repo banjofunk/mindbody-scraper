@@ -8,16 +8,12 @@ provider:
   environment:
     region: ${self:provider.region}
     stage: ${self:provider.stage}
-    allocationId:
-      Fn::GetAtt: [ EIP, AllocationId ]
-    routeTableId:
-      Ref: PrivateRouteTable
-    subnetId:
-      Ref: PublicSubnetA
-    vpcId:
-      Ref: VPC
+    natOff: https://s3-us-west-2.amazonaws.com/mindbody-scraper-auth/mindbody-scraper-auth-off-template.yml
+    natOn: https://s3-us-west-2.amazonaws.com/mindbody-scraper-auth/mindbody-scraper-auth-on-template.yml
     scraperQueueUrl:
       Ref: scraperQueue
+    authStackName:
+      Fn::GetAtt: [ authStack, Outputs.StackName ]
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -32,95 +28,99 @@ provider:
         - Fn::GetAtt: [ productsTable, Arn ]
     - Effect: Allow
       Action:
+        - s3:*
         - ec2:*
+        - cloudformation:*
         - lambda:*
         - sqs:*
       Resource:
         - "*"
 custom:
-  natVPC:
+  vpc:
     securityGroupIds:
-      - Ref: SecurityGroup
+      - Fn::GetAtt: [ authStack, Outputs.SecurityGroupId ]
     subnetIds:
-      - Ref: PrivateSubnet
+      - Fn::GetAtt: [ authStack, Outputs.PrivateSubnetId ]
 
 functions:
-  processQueue:
-    handler: functions/processQueue.handler
-    timeout: 120
-    reservedConcurrency: 6
-    events:
-      - sqs:
-          batchSize: 5
-          arn:
-            Fn::GetAtt: [ scraperQueue, Arn ]
-  mbFetch:
-    handler: functions/mbFetch.handler
-    timeout: 120
-    vpc: ${self:custom.natVPC}
-  getToken:
-    handler: functions/getToken.handler
-    timeout: 120
-    reservedConcurrency: 2
-    vpc: ${self:custom.natVPC}
-  createNat:
-    handler: functions/createNat.handler
-    timeout: 600
-  deleteNat:
-    handler: functions/deleteNat.handler
-    timeout: 600
   getTest:
     handler: functions/getTest.handler
+    vpc: ${self:custom.vpc}
+  mbFetch:
+    handler: functions/mbFetch.handler
     timeout: 30
+    reservedConcurrency: 8
+    vpc: ${self:custom.vpc}
+  getToken:
+    handler: functions/getToken.handler
+    timeout: 30
+    reservedConcurrency: 2
+    vpc: ${self:custom.vpc}
+  processQueue:
+    handler: functions/processQueue.handler
+    timeout: 30
+    reservedConcurrency: 4
+    events:
+      - sqs:
+          batchSize: 4
+          arn:
+            Fn::GetAtt: [ scraperQueue, Arn ]
+  createAuthVpc:
+    handler: functions/createAuthVpc.handler
+  deleteAuthVpc:
+    handler: functions/deleteAuthVpc.handler
   getProductsByLetter:
     handler: functions/getProductsByLetter.handler
-    timeout: 120
+    timeout: 30
   getProductsByVariantId:
     handler: functions/getProductsByVariantId.handler
-    timeout: 120
+    timeout: 30
   getProductDetails:
     handler: functions/getProductDetails.handler
-    timeout: 120
+    timeout: 30
   getProducts:
     handler: functions/getProducts.handler
-    timeout: 120
+    timeout: 30
   getAppointmentTypes:
     handler: functions/getAppointmentTypes.handler
-    timeout: 120
+    timeout: 30
   getPricingDetails:
     handler: functions/getPricingDetails.handler
-    timeout: 120
+    timeout: 30
   getPricing:
     handler: functions/getPricing.handler
-    timeout: 120
+    timeout: 30
   getClassTypeDetails:
     handler: functions/getClassTypeDetails.handler
-    timeout: 120
+    timeout: 30
   getClassTypes:
     handler: functions/getClassTypes.handler
-    timeout: 120
+    timeout: 30
   getUserProfile:
     handler: functions/getUserProfile.handler
-    timeout: 120
+    timeout: 30
   getUsers:
     handler: functions/getUsers.handler
-    timeout: 120
+    timeout: 30
   getDateRange:
     handler: functions/getDateRange.handler
-    timeout: 120
+    timeout: 30
   getClassEvents:
     handler: functions/getClassEvents.handler
-    timeout: 120
+    timeout: 30
   getClassEventUsers:
     handler: functions/getClassEventUsers.handler
-    timeout: 120
+    timeout: 30
 resources:
   Resources:
     scraperQueue:
       Type: "AWS::SQS::Queue"
       Properties:
         QueueName: "ScraperQueue"
-        VisibilityTimeout: 20
+    authStack:
+      Type: AWS::CloudFormation::Stack
+      Properties:
+        TemplateURL: ${self:provider.environment.natOff}
     appointmentTypesTable:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -212,91 +212,3 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: '2'
           WriteCapacityUnits: '2'
-
-# VPC Resources
-    VPC:
-      Type: AWS::EC2::VPC
-      Properties:
-        CidrBlock: 10.0.0.0/16
-        EnableDnsSupport: true
-        EnableDnsHostnames: true
-        InstanceTenancy: default
-    InternetGateway:
-      Type: AWS::EC2::InternetGateway
-    VPCGatewayAttachment:
-      Type: AWS::EC2::VPCGatewayAttachment
-      Properties:
-          VpcId:
-            Ref: VPC
-          InternetGatewayId:
-            Ref: InternetGateway
-    PublicSubnetA:
-      Type: AWS::EC2::Subnet
-      Properties:
-        AvailabilityZone: us-west-2a
-        VpcId:
-          Ref: VPC
-        CidrBlock: 10.0.1.0/24
-        MapPublicIpOnLaunch: true
-    RouteTable:
-      Type: AWS::EC2::RouteTable
-      Properties:
-        VpcId:
-          Ref: VPC
-    InternetRoute:
-      Type: AWS::EC2::Route
-      DependsOn: VPCGatewayAttachment
-      Properties:
-        DestinationCidrBlock: 0.0.0.0/0
-        GatewayId:
-          Ref: InternetGateway
-        RouteTableId:
-          Ref: RouteTable
-    PublicSubnetARouteTableAssociation:
-      Type: AWS::EC2::SubnetRouteTableAssociation
-      Properties:
-        RouteTableId:
-          Ref: RouteTable
-        SubnetId:
-          Ref: PublicSubnetA
-    PrivateSubnet:
-      Type: AWS::EC2::Subnet
-      Properties:
-        AvailabilityZone: us-west-2a
-        VpcId:
-          Ref: VPC
-        CidrBlock: 10.0.4.0/24
-        MapPublicIpOnLaunch: false
-    PrivateRouteTable:
-      Type: AWS::EC2::RouteTable
-      Properties:
-        VpcId:
-          Ref: VPC
-    EIP:
-      Type: AWS::EC2::EIP
-      Properties:
-        Domain: vpc
-    PrivateSubnetRouteTableAssociation:
-      Type: AWS::EC2::SubnetRouteTableAssociation
-      Properties:
-        RouteTableId:
-          Ref: PrivateRouteTable
-        SubnetId:
-          Ref: PrivateSubnet
-    SecurityGroup:
-      Type: AWS::EC2::SecurityGroup
-      Properties:
-        GroupName: "mindbody scraper SG"
-        GroupDescription: "Mind body scraper security group"
-        VpcId:
-          Ref: VPC
-    SecurityGroupIngress:
-      Type: AWS::EC2::SecurityGroupIngress
-      Properties:
-        GroupId:
-          Ref: SecurityGroup
-        IpProtocol: tcp
-        FromPort: 0
-        ToPort: 65535
-        SourceSecurityGroupId:
-          Ref: SecurityGroup

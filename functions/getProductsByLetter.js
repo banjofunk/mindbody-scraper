@@ -1,26 +1,28 @@
 const cheerio = require('cheerio')
 const mbFetch = require('./utils/mbFetch')
 const sendToQueue = require('./utils/sendToQueue')
+const logger = require('./utils/logger')
 const qs = require('querystring')
 
 exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
-  const letter = event.item
+  const { item, session } = event
+  await logger(session, `getting prducts by letter: ${item}`)
   const method = 'post'
   const url = 'https://clients.mindbodyonline.com/asp/adm/adm_tlbx_prod.asp'
   const headers = { "Content-Type": "application/x-www-form-urlencoded" }
-  const body = searchQueryParams(letter)
-  let products = await mbFetch(url, { method, headers, body })
+  const body = searchQueryParams(item)
+  let products = await mbFetch(url, { method, headers, body }, session)
     .then(resp => parseProducts(resp))
-  if(!letter.match(/^[a-zA-Z]/)){
+  if(!item.match(/^[a-zA-Z]/)){
     products = products.filter(prod => !prod.name.match(/^[a-zA-Z]/))
   }
   const productItems = products.filter(r => !r.variants)
   const variantItems = products.filter(r => r.variants)
 
-  await sendToQueue(productItems, 'getProductDetails')
-  await sendToQueue(variantItems, 'getProductsByVariantId')
-  console.log(`letter (${letter}): ${products.length} items`)
+  await sendToQueue(productItems, 'getProductDetails', session)
+  await sendToQueue(variantItems, 'getProductsByVariantId', session)
+  console.log(`letter (${item}): ${products.length} items`)
 
   return Promise.resolve()
 }

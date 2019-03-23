@@ -10,6 +10,8 @@ provider:
     stage: ${self:provider.stage}
     natOff: https://s3-us-west-2.amazonaws.com/mindbody-scraper-auth/mindbody-scraper-auth-off-template.yml
     natOn: https://s3-us-west-2.amazonaws.com/mindbody-scraper-auth/mindbody-scraper-auth-on-template.yml
+    scraperLogName:
+      Ref: scraperLog
     scraperQueueUrl:
       Ref: scraperQueue
     authStackName:
@@ -28,6 +30,8 @@ provider:
         - Fn::GetAtt: [ productsTable, Arn ]
     - Effect: Allow
       Action:
+        - logs:*
+        - ssm:*
         - s3:*
         - ec2:*
         - cloudformation:*
@@ -35,6 +39,7 @@ provider:
         - sqs:*
       Resource:
         - "*"
+
 custom:
   vpc:
     securityGroupIds:
@@ -43,6 +48,8 @@ custom:
       - Fn::GetAtt: [ authStack, Outputs.PrivateSubnetId ]
 
 functions:
+  getStudio:
+    handler: functions/getStudio.handler
   getTest:
     handler: functions/getTest.handler
     vpc: ${self:custom.vpc}
@@ -120,7 +127,11 @@ resources:
     authStack:
       Type: AWS::CloudFormation::Stack
       Properties:
-        TemplateURL: ${self:provider.environment.natOff}
+        TemplateURL: ${self:provider.environment.natOn}
+    scraperLog:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        RetentionInDays: 7
     appointmentTypesTable:
       Type: AWS::DynamoDB::Table
       Properties:

@@ -1,19 +1,21 @@
 const cheerio = require('cheerio')
 const mbFetch = require('./utils/mbFetch')
+const logger = require('./utils/logger')
 const sendToQueue = require('./utils/sendToQueue')
 const qs = require('querystring')
 
 exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
-  const variant = event.item
+  const { item, session } = event
+  await logger(session, `getting product variants for product: ${item.id}`)
   const method = 'post'
   const url = 'https://clients.mindbodyonline.com/asp/adm/adm_tlbx_prod.asp'
   const headers = { "Content-Type": "application/x-www-form-urlencoded" }
-  const body = searchQueryParams(variant.id)
-  const products = await mbFetch(url, { method, headers, body })
+  const body = searchQueryParams(item.id, session.studioId)
+  const products = await mbFetch(url, { method, headers, body }, session)
     .then(resp => parseProducts(resp))
-  await sendToQueue(products, 'getProductDetails')
-  console.log(`variant ${variant.id}:`, products.length)
+  await sendToQueue(products, 'getProductDetails', session)
+  console.log(`variant ${item.id}:`, products.length)
   return Promise.resolve()
 }
 
@@ -39,9 +41,9 @@ const parseProducts = async (resp) => {
     })
 }
 
-const searchQueryParams = (variantId) => {
+const searchQueryParams = (variantId, studioId) => {
   return qs.stringify({
-    frmSubmitted:"6655",
+    frmSubmitted: studioId,
     frmAddEdit:"Edit",
     showSearchResults:"true",
     newProdSelected:"true",

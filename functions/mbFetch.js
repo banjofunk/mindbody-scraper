@@ -8,13 +8,14 @@ let version = 0
 let token, params
 exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
-  const { input, init } = event
-  await getToken()
+  console.log('event', event)
+  const { input, init, session } = event
+  await getToken(session)
   resp = await fetchWithToken(input, init, token)
   for (const i of Array(5).fill(0)) {
     if(resp) { break } else {
       console.log('token failed')
-      token = await getToken(true)
+      token = await getToken(session, true)
       resp = await fetchWithToken(input, init, token)
     }
   }
@@ -38,10 +39,10 @@ const fetchWithToken = async (input, init, token) => {
     })
 }
 
-const getToken = async (getNew=false) => {
+const getToken = async (session, getNew=false) => {
   params = {
-    FunctionName: `mindbody-scraper-auth-${process.env.stage}-getToken`,
-    Payload: JSON.stringify({ getNew, version })
+    FunctionName: `mindbody-scraper-${process.env.stage}-getToken`,
+    Payload: JSON.stringify({ getNew, version, session })
   }
   return await lambda.invoke(params).promise()
     .then(data => {

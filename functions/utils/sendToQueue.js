@@ -1,11 +1,11 @@
 const AWS = require('aws-sdk')
 const sqs = new AWS.SQS({ region: 'us-west-2' });
 
-module.exports = async (items, lambdaName) => {
+module.exports = async (items, lambdaName, session) => {
   let entries = []
   for (const item of items) {
       const Id = `${lambdaName}-${item.id}`
-      const MessageBody = JSON.stringify({ lambdaName, item })
+      const MessageBody = JSON.stringify({ lambdaName, item, session })
       entries.push({ Id, MessageBody })
   }
   let i,j,entryChunk

@@ -6,11 +6,11 @@ exports.handler = async (event, context) => {
   const records = event.Records
   console.log('records: ', records.length)
   for( const record of records){
-    const { lambdaName, item } = JSON.parse(record.body)
+    const { lambdaName, item, session } = JSON.parse(record.body)
     console.log('invoking: ', lambdaName)
     params = {
       FunctionName: `mindbody-scraper-${process.env.stage}-${lambdaName}`,
-      Payload: JSON.stringify({ item })
+      Payload: JSON.stringify({ item, session })
     }
     await lambda.invoke(params).promise()
   }

@@ -1,15 +1,17 @@
 const cheerio = require('cheerio')
 const mbFetch = require('./utils/mbFetch')
 const writeToDynamo = require('./utils/writeToDynamo')
+const logger = require('./utils/logger')
 const qs = require('querystring')
 
 exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
-  const product = event.item
+  const { item, session } = event
+  await logger(session, `fetching product: ${item.id}`)
   const url = 'https://clients.mindbodyonline.com/productmanagement/editproduct'
-  const query = qs.stringify({ descriptionId: product.id })
-  const productDetails = await mbFetch(`${url}?${query}`)
-    .then(resp => parseProduct(resp, product))
+  const query = qs.stringify({ descriptionId: item.id })
+  const productDetails = await mbFetch(`${url}?${query}`, {}, session)
+    .then(resp => parseProduct(resp, item))
   await writeToDynamo('productId', productDetails, 'ProductsTable')
   return Promise.resolve()
 }

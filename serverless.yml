@@ -124,6 +124,7 @@ resources:
       Type: "AWS::SQS::Queue"
       Properties:
         QueueName: "ScraperQueue"
+        ReceiveMessageWaitTimeSeconds: 10
     authStack:
       Type: AWS::CloudFormation::Stack
       Properties:

@@ -23,7 +23,7 @@ exports.handler = async (event, context) => {
     await ssm.putParameter(ssmParams).promise()
   }
   const session = { logStreamName, studioId }
-  await sendToQueue([{id:0}], 'getProducts', session)
+  await sendToQueue(true, 'getProducts', session)
   await logger(session, `starting scraper for studio`)
   return Promise.resolve()
   // return await fetch('https://api.ipify.org?format=json')

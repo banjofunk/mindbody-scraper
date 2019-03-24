@@ -1,7 +1,16 @@
 const AWS = require('aws-sdk')
 const sqs = new AWS.SQS({ region: 'us-west-2' });
 
-module.exports = async (items, lambdaName, session) => {
+module.exports = async (input, lambdaName, session) => {
+  if(Array.isArray(input)){
+    await sendMessageBatch(input, lambdaName, session)
+  }else{
+    await sendMessage(input, lambdaName, session)
+  }
+  return Promise.resolve()
+}
+
+const sendMessageBatch = async (items, lambdaName, session) => {
   let entries = []
   for (const item of items) {
       const Id = `${lambdaName}-${item.id}`
@@ -24,4 +33,13 @@ module.exports = async (items, lambdaName, session) => {
       .catch(err => { console.log('sqs send error:', err, err.stack) })
   }
   return Promise.resolve()
+
+}
+
+const sendMessage = async (item, lambdaName, session) => {
+  var params = {
+  MessageBody: JSON.stringify({ lambdaName, item, session }),
+  QueueUrl: process.env.scraperQueueUrl
+};
+return await sqs.sendMessage(params).promise()
 }

@@ -1,10 +1,14 @@
 const mbFetch = require('./utils/mbFetch')
+const logger = require('./utils/logger')
 const sendToQueue = require('./utils/sendToQueue')
 const cheerio = require('cheerio')
 const qs = require('querystring')
 
 exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
+  const { session } = event
+  await logger(session, `starting users scraper`)
+
   const url = 'https://clients.mindbodyonline.com/ASP/adm/adm_rpt_mailer.asp'
   const query = qs.stringify({ category: 'Clients' })
   const method = 'post'
@@ -12,28 +16,22 @@ exports.handler = async (event, context) => {
     "Content-Type": "application/x-www-form-urlencoded"
   }
   const body = bodyQueryParams()
-  const users = await mbFetch(`${url}?${query}`, { method, headers, body })
-    .then(resp => parseUsers(resp))
+  const fetchParams = {
+    session,
+    url: `${url}?${query}`,
+    options: { method, headers, body },
+    parser: 'usersParser'
+  }
+  const users = await mbFetch(fetchParams)
 
   const endSlice = users.length
-  const startSlice = users.length - 10
+  const startSlice = session.prod ? 0 : users.length - 10
   const filteredUsers = users.slice(startSlice, endSlice)
+  console.log('filteredUsers', filteredUsers)
 
-  await sendToQueue(filteredUsers, 'getUserProfile')
+  await sendToQueue(filteredUsers, 'getUserProfile', session)
+  await logger(session, `finished users scraper`)
   return Promise.resolve()
-}
-
-const parseUsers = resp => {
-  const $ = cheerio.load(resp)
-  return $('.resultRow').get().map(user => {
-    return {
-      id: $(user).children().eq(3).text(),
-      firstName: $(user).children().eq(1).text(),
-      lastName: $(user).children().eq(0).text(),
-      email: $(user).children().eq(4).text(),
-      phone: $(user).children().eq(5).text()
-    }
-  })
 }
 
 const bodyQueryParams = () => {

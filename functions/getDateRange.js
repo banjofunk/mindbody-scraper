@@ -1,16 +1,20 @@
 const sendToQueue = require('./utils/sendToQueue')
+const logger = require('./utils/logger')
 const moment = require('moment')
 
 exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
-  const { start, end } = event
-  let currentMoment = moment(start, "MM/DD/YYYY")
-  const endMoment = moment(end, "MM/DD/YYYY")
-  let dates = []
+  const { session, item } = event
+  await logger(session, `starting class event scraper`)
+  let currentMoment = moment()
+  const endMoment = session.prod
+    ? moment(item.endDate, "MM/DD/YYYY")
+    : moment().subtract(1, "days")
+  let date
   while(currentMoment > endMoment){
-    dates.push(currentMoment.format('MM/DD/YYYY'))
+    date = currentMoment.format('MM/DD/YYYY')
+    await sendToQueue(date, 'getClassEvents', session)
     currentMoment = currentMoment.subtract(7, "days")
   }
-  await sendToQueue(dates, 'getClassEvents')
   return Promise.resolve()
 }

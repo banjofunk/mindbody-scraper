@@ -6,10 +6,11 @@ const cloudwatchlogs = new AWS.CloudWatchLogs()
 
 exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
-  const { studioId, username, password } = event
-
+  const { studioId, username, password, prod, endDate } = event
   const logStreamName = `studio-${studioId}-${Date.now()}`
   const logGroupName = process.env.scraperLogName
+  const session = { logStreamName, studioId, prod }
+
   const streamParams = { logGroupName, logStreamName }
   await cloudwatchlogs.createLogStream(streamParams).promise()
 
@@ -22,10 +23,12 @@ exports.handler = async (event, context) => {
     };
     await ssm.putParameter(ssmParams).promise()
   }
-  const session = { logStreamName, studioId }
-  await sendToQueue(true, 'getProducts', session)
+  // await sendToQueue(true, 'getProducts', session)
+  // await sendToQueue(true, 'getPricing', session)
+  await sendToQueue(true, 'getClassTypes', session)
+  // await sendToQueue(true, 'getAppointmentTypes', session)
+  // await sendToQueue(true, 'getUsers', session)
+  // await sendToQueue({ endDate }, 'getDateRange', session)
   await logger(session, `starting scraper for studio`)
-  return Promise.resolve()
-  // return await fetch('https://api.ipify.org?format=json')
-  //   .then(resp => resp.json())
+  return Promise.resolve(session)
 }

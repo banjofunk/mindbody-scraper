@@ -1,42 +1,27 @@
 const mbFetch = require('./utils/mbFetch')
 const sendToQueue = require('./utils/sendToQueue')
 const FormData = require('form-data')
-const cheerio = require('cheerio')
 const qs = require('querystring')
+const logger = require('./utils/logger')
 
 exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
-  const date = event.item
+  const { item, session } = event
+  await logger(session, `fetching class Events: ${item}`)
   const method = 'post'
-  const url = 'https://clients.mindbodyonline.com/classic/admmainclass?tabID=7'
+  const url = 'https://clients.mindbodyonline.com/classic/admmainclass'
   const query = qs.stringify({ tabID: 7 })
   const body = new FormData()
-  body.append("txtDate", date)
+  body.append("txtDate", item)
   body.append("optLocation", 0)
-  const classEvents = await mbFetch(`${url}?${query}`, { method, headers, body})
-    .then(resp => parseClassEvents(resp))
-  await sendToQueue(classEvents, 'getClassEventUsers')
+  const fetchParams = {
+    session,
+    url: `${url}?${query}`,
+    options: { method, body },
+    parser: 'classEventsParser'
+  }
+  const classEvents = await mbFetch(fetchParams)
+  console.log('classEvents', classEvents)
+  await sendToQueue(classEvents, 'getClassEventUsers', session)
   return Promise.resolve()
-}
-
-const parseClassEvents = resp => {
-  const $ = cheerio.load(resp)
-  let classEvents = []
-  $('.cancelLink').map( (i, yogaClass) => {
-    const classId = $(yogaClass).data('classid')
-    if(classId){
-      classEvents.push({
-        id: classId,
-        date: $(yogaClass).data('classdate'),
-        teacherId: $(`a.trackResource[data-classid="${classId}"]`).data('trainerid'),
-        location: $(yogaClass).parents('.gearColumn').siblings().eq(5).text().trim(),
-        room: $(yogaClass).parents('.gearColumn').siblings().eq(6).text().trim(),
-        teacher: $(yogaClass).data('teacher'),
-        classTypeId: $(yogaClass).data('descriptionid'),
-        classTitle: $(yogaClass).data('classname').trim(),
-        time: $(yogaClass).parents('.gearColumn').siblings('.classTimeCol').text().trim()
-      })
-    }
-  })
-  return classEvents
 }

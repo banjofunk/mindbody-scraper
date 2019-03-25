@@ -1,29 +1,24 @@
 const mbFetch = require('./utils/mbFetch')
 const writeToDynamo = require('./utils/writeToDynamo')
-const cheerio = require('cheerio')
 const qs = require('querystring')
+const logger = require('./utils/logger')
 
 exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false;
-  const yogaClass = event.item
+  const { item, session } = event
+  await logger(session, `fetching class event users: ${item.id}`)
   const url = 'https://clients.mindbodyonline.com/classic/admclslist'
   const query = qs.stringify({
-    pDate: yogaClass.date,
-    pClsID: yogaClass.id
+    pDate: item.date,
+    pClsID: item.id
   })
-  const students = await mbFetch(`${url}?${query}`)
-    .then(resp => parseClassEventUsers(resp))
-  await writeToDynamo('classId', {...yogaClass, students}, 'ClassEventsTable')
+  const fetchParams = {
+    session,
+    url: `${url}?${query}`,
+    options: {},
+    parser: 'classEventUsersParser'
+  }
+  const students = await mbFetch(fetchParams)
+  await writeToDynamo('classId', {...item, students}, 'ClassEventsTable')
   return Promise.resolve()
-}
-
-const parseClassEventUsers = (resp) => {
-  const $ = cheerio.load(resp)
-  return $('.clientName').get().map(client => {
-    const id = $(client).attr('href').match(/ID=(.*?)&/)[1]
-    const name = $(client).text().trim()
-    const firstName = name.split(',')[1].trim()
-    const lastName = name.split(',')[0].trim()
-    return { id, firstName, lastName }
-  })
 }

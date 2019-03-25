@@ -55,17 +55,17 @@ functions:
     vpc: ${self:custom.vpc}
   mbFetch:
     handler: functions/mbFetch.handler
-    timeout: 30
+    timeout: 90
     reservedConcurrency: 8
     vpc: ${self:custom.vpc}
   getToken:
     handler: functions/getToken.handler
-    timeout: 30
+    timeout: 90
     reservedConcurrency: 2
     vpc: ${self:custom.vpc}
   processQueue:
     handler: functions/processQueue.handler
-    timeout: 30
+    timeout: 90
     reservedConcurrency: 4
     events:
       - sqs:
@@ -78,46 +78,46 @@ functions:
     handler: functions/deleteAuthVpc.handler
   getProductsByLetter:
     handler: functions/getProductsByLetter.handler
-    timeout: 30
+    timeout: 90
   getProductsByVariantId:
     handler: functions/getProductsByVariantId.handler
-    timeout: 30
+    timeout: 90
   getProductDetails:
     handler: functions/getProductDetails.handler
-    timeout: 30
+    timeout: 90
   getProducts:
     handler: functions/getProducts.handler
-    timeout: 30
+    timeout: 90
   getAppointmentTypes:
     handler: functions/getAppointmentTypes.handler
-    timeout: 30
+    timeout: 90
   getPricingDetails:
     handler: functions/getPricingDetails.handler
-    timeout: 30
+    timeout: 90
   getPricing:
     handler: functions/getPricing.handler
-    timeout: 30
+    timeout: 90
   getClassTypeDetails:
     handler: functions/getClassTypeDetails.handler
-    timeout: 30
+    timeout: 90
   getClassTypes:
     handler: functions/getClassTypes.handler
-    timeout: 30
+    timeout: 90
   getUserProfile:
     handler: functions/getUserProfile.handler
-    timeout: 30
+    timeout: 90
   getUsers:
     handler: functions/getUsers.handler
-    timeout: 30
+    timeout: 90
   getDateRange:
     handler: functions/getDateRange.handler
-    timeout: 30
+    timeout: 90
   getClassEvents:
     handler: functions/getClassEvents.handler
-    timeout: 30
+    timeout: 90
   getClassEventUsers:
     handler: functions/getClassEventUsers.handler
-    timeout: 30
+    timeout: 90
 resources:
   Resources:
     scraperQueue:
@@ -125,6 +125,7 @@ resources:
       Properties:
         QueueName: "ScraperQueue"
         ReceiveMessageWaitTimeSeconds: 10
+        VisibilityTimeout: 90
     authStack:
       Type: AWS::CloudFormation::Stack
       Properties:

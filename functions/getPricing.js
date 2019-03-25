@@ -1,40 +1,44 @@
 const mbFetch = require('./utils/mbFetch')
+const logger = require('./utils/logger')
 const sendToQueue = require('./utils/sendToQueue')
 const cheerio = require('cheerio')
 const qs = require('querystring')
 
 exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
-  const method = 'post'
-  const headers = {
-    "Content-Type": "application/x-www-form-urlencoded"
-  }
+  const { session } = event
+  const resultsLimit = session.prod ? "10000" : "10"
+  await logger(session, `started pricing scraper`)
 
+  const method = 'post'
+  const headers = { "Content-Type": "application/x-www-form-urlencoded" }
   const filterUrl = 'https://clients.mindbodyonline.com/paginatedpricingoptions/filter'
   const filterBody = filterQueryParams()
-  await mbFetch(filterUrl, { method, headers, body: filterBody })
-
+  const filterFetchParams = {
+    session,
+    url: filterUrl,
+    options: { method, headers, body: filterBody },
+    parser: false
+  }
+  await mbFetch(filterFetchParams)
   const searchUrl = 'https://clients.mindbodyonline.com/paginatedpricingoptions/search'
-  const searchBody = searchQueryParams()
-  const pricingItems = await mbFetch(searchUrl, { method, headers, body: searchBody })
-    .then(async resp => {
-      const $ = cheerio.load(resp)
-      return $('.contract-item').get().map(item => {
-        return {
-          id: $(item).attr('id').trim(),
-          title: $(item).attr('title').trim(),
-          active: !$(item).attr('class').includes('deactivated')
-        }
-      })
-    })
-  await sendToQueue(pricingItems, 'getPricingDetails')
+  const searchBody = searchQueryParams(resultsLimit)
+  const fetchParams = {
+    session,
+    url: searchUrl,
+    options: { method, headers, body: searchBody },
+    parser: 'pricingsParser'
+  }
+  const pricingItems = await mbFetch(fetchParams)
+  await logger(session, `sending ${pricingItems.length} pricing results to queue`)
+  await sendToQueue(pricingItems, 'getPricingDetails', session)
   return Promise.resolve()
 }
 
-const searchQueryParams = () => {
+const searchQueryParams = (resultsLimit) => {
   return qs.stringify({
     'PageNumber': '1',
-    'ResultsPerPage': '10000',
+    'ResultsPerPage': resultsLimit,
     'DisplayBottomPagination': 'False',
     'DisplayEditSelected': 'True',
     'DisplayFilters': 'True',

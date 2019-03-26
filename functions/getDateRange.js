@@ -10,9 +10,12 @@ exports.handler = async (event, context) => {
   const endMoment = session.prod
     ? moment(item.endDate, "MM/DD/YYYY")
     : moment().subtract(1, "days")
+  console.log('currentMoment',currentMoment.format('MM/DD/YYYY'))
+  console.log('endMoment',endMoment.format('MM/DD/YYYY'))
   let date
   while(currentMoment > endMoment){
     date = currentMoment.format('MM/DD/YYYY')
+    console.log('date', date)
     await sendToQueue(date, 'getClassEvents', session)
     currentMoment = currentMoment.subtract(7, "days")
   }

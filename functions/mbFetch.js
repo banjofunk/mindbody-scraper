@@ -10,34 +10,46 @@ let token, params
 exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
   console.log('event', event)
-  const { url, options, session, parser } = event
+  const { url, options, session, parser, respType } = event
   await getToken(session)
-  resp = await fetchWithToken(url, options, token)
+  resp = await fetchWithToken(url, options, token, respType)
+    .catch(err => Promise.reject(err))
   for (const i of Array(5).fill(0)) {
     if(resp) { break } else {
       console.log('token failed')
       token = await getToken(session, true)
-      resp = await fetchWithToken(url, options, token)
+      resp = await fetchWithToken(url, options, token, respType)
+        .catch(err => Promise.reject(err))
     }
   }
+  console.log('parse and return')
   return parser ? parseResp(parser, resp) : resp
 }
 
-const fetchWithToken = async (url, options, token) => {
+const fetchWithToken = async (url, options, token, respType) => {
   console.log('url', url)
   if(!options.headers) { options.headers = {} }
   options.headers['Cookie'] = token
   options.headers['User-Agent'] = userAgent
-  return await fetch(url, options)
-    .then(resp => resp.text())
-    .then(resp => {
-      const $ = cheerio.load(resp)
-      const firstScript = ($('body > script').eq(0).html() || '').trim()
-      if(firstScript === 'mb.sessionHelpers.resetSession();'){
-        return false
-      }
-      return resp
-    })
+  if(respType === 'json'){
+    return await fetch(url, options)
+      .then(resp => resp.json())
+  }else{
+    return await fetch(url, options)
+      .then(resp => resp.text())
+      .then(resp => {
+        const $ = cheerio.load(resp)
+        const firstScript = ($('body > script').eq(0).html() || '').trim()
+        if(firstScript === 'mb.sessionHelpers.resetSession();'){
+          return false
+        }
+        const error = $('.error-main-header')
+        if(error){
+          return Promise.reject(error.text())
+        }
+        return resp
+      })
+  }
 }
 
 const getToken = async (session, getNew=false) => {

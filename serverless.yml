@@ -76,6 +76,12 @@ functions:
     handler: functions/createAuthVpc.handler
   deleteAuthVpc:
     handler: functions/deleteAuthVpc.handler
+  getBusinessLocations:
+    handler: functions/getBusinessLocations.handler
+    timeout: 90
+  getResources:
+    handler: functions/getResources.handler
+    timeout: 90
   getProductsByLetter:
     handler: functions/getProductsByLetter.handler
     timeout: 90

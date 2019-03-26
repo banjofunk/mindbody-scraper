@@ -7,9 +7,9 @@ const logger = require('./utils/logger')
 exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
   const { item, session } = event
-  await logger(session, `fetching class Events: ${item}`)
   const method = 'post'
-  const url = 'https://clients.mindbodyonline.com/classic/admmainclass'
+  // const url = 'https://clients.mindbodyonline.com/classic/admmainclass'
+  const url = 'https://clients.mindbodyonline.com/classic/admmainclas'
   const query = qs.stringify({ tabID: 7 })
   const body = new FormData()
   body.append("txtDate", item)
@@ -20,8 +20,15 @@ exports.handler = async (event, context) => {
     options: { method, body },
     parser: 'classEventsParser'
   }
-  const classEvents = await mbFetch(fetchParams)
-  console.log('classEvents', classEvents)
-  await sendToQueue(classEvents, 'getClassEventUsers', session)
-  return Promise.resolve()
+  return await mbFetch(fetchParams)
+    .then( async classEvents => {
+      console.log('classEvents', classEvents)
+      await logger(session, `fetched class Events for: ${item}`)
+      // await sendToQueue(classEvents, 'getClassEventUsers', session)
+      return Promise.resolve()
+    })
+    .catch( async err => {
+      await logger(session, `**Error fetching class Events for ${item}**`)
+      return Promise.reject()
+    })
 }

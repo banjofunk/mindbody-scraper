@@ -23,9 +23,9 @@ exports.handler = async (event, context) => {
     };
     await ssm.putParameter(ssmParams).promise()
   }
-  await sendToQueue(true, 'getBusinessLocations', session)
-  await sendToQueue(true, 'getResources', session)
-  // await sendToQueue(true, 'getProducts', session)
+  // await sendToQueue(true, 'getBusinessLocations', session)
+  // await sendToQueue(true, 'getResources', session)
+  await sendToQueue(true, 'getProducts', session)
   // await sendToQueue(true, 'getPricing', session)
   // await sendToQueue(true, 'getClassTypes', session)
   // await sendToQueue(true, 'getAppointmentTypes', session)

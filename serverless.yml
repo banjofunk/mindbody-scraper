@@ -48,6 +48,8 @@ custom:
       - Fn::GetAtt: [ authStack, Outputs.PrivateSubnetId ]
 
 functions:
+  clearLogs:
+    handler: functions/clearLogs.handler
   getStudio:
     handler: functions/getStudio.handler
   getTest:

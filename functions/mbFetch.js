@@ -43,10 +43,10 @@ const fetchWithToken = async (url, options, token, respType) => {
         if(firstScript === 'mb.sessionHelpers.resetSession();'){
           return false
         }
-        const error = $('.error-main-header')
-        if(error){
-          return Promise.reject(error.text())
-        }
+        // const error = $('.error-main-header')
+        // if(error){
+        //   return Promise.reject(error.text())
+        // }
         return resp
       })
   }

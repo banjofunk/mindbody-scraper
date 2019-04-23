@@ -8,8 +8,8 @@ exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
   const { item, session } = event
   const method = 'post'
-  // const url = 'https://clients.mindbodyonline.com/classic/admmainclass'
-  const url = 'https://clients.mindbodyonline.com/classic/admmainclas'
+  const url = 'https://clients.mindbodyonline.com/classic/admmainclass'
+  // const url = 'https://clients.mindbodyonline.com/classic/admmainclas'
   const query = qs.stringify({ tabID: 7 })
   const body = new FormData()
   body.append("txtDate", item)
@@ -24,8 +24,8 @@ exports.handler = async (event, context) => {
     .then( async classEvents => {
       console.log('classEvents', classEvents)
       await logger(session, `fetched class Events for: ${item}`)
-      // await sendToQueue(classEvents, 'getClassEventUsers', session)
-      return Promise.resolve()
+      await sendToQueue(classEvents, 'getClassEventUsers', session)
+      // return Promise.resolve()
     })
     .catch( async err => {
       await logger(session, `**Error fetching class Events for ${item}**`)

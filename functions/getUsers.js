@@ -25,11 +25,12 @@ exports.handler = async (event, context) => {
   const users = await mbFetch(fetchParams)
 
   const endSlice = users.length
-  const startSlice = session.prod ? 0 : users.length - 10
+  const startSlice = session.prod ? 0 : users.length - 100
   const filteredUsers = users.slice(startSlice, endSlice)
   console.log('filteredUsers', filteredUsers)
 
   await sendToQueue(filteredUsers, 'getUserProfile', session)
+  await logger(session, `total users: ${users.length}`)
   await logger(session, `finished users scraper`)
   return Promise.resolve()
 }

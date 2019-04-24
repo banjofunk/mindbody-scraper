@@ -5,7 +5,7 @@ const writeToDynamo = require('./utils/writeToDynamo')
 exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
   const { session } = event
-  await logger(session, `starting resources scraper`)
+  // await logger(session, `starting resources scraper`)
 
   const url = 'https://clients.mindbodyonline.com/ResourceManagement/GetResourceManagementData'
   const fetchParams = {

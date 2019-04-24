@@ -6,7 +6,7 @@ const cloudwatchlogs = new AWS.CloudWatchLogs()
 
 exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
-  const { studioId, username, password, prod, endDate } = event
+  const { studioId, username, password, prod, endDate, scrapers } = event
   const logStreamName = `studio-${studioId}-${Date.now()}`
   const logGroupName = process.env.scraperLogName
   const session = { logStreamName, studioId, prod }
@@ -25,12 +25,20 @@ exports.handler = async (event, context) => {
   }
   // await sendToQueue(true, 'getBusinessLocations', session)
   // await sendToQueue(true, 'getResources', session)
-  await sendToQueue(true, 'getProducts', session)
+  // await sendToQueue(true, 'getProducts', session)
   // await sendToQueue(true, 'getPricing', session)
   // await sendToQueue(true, 'getClassTypes', session)
   // await sendToQueue(true, 'getAppointmentTypes', session)
   // await sendToQueue(true, 'getUsers', session)
   // await sendToQueue({ endDate }, 'getDateRange', session)
+
+  for(const scraper of scrapers){
+    if(scraper === 'getDateRange'){
+      await sendToQueue({ endDate }, 'getDateRange', session)
+    }else{
+      await sendToQueue(true, scraper, session)
+    }
+  }
   await logger(session, `starting scraper for studio`)
   return Promise.resolve(session)
 }

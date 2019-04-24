@@ -7,8 +7,7 @@ exports.handler = async (event, context) => {
   await logger(session, `sending letters to queue`)
   let letters
   if(session.prod){
-    // letters = 'abcdefghijklmnopqrstuvwxyz '.split('')
-    letters = 'ab'.split('')
+    letters = 'abcdefghijklmnopqrstuvwxyz '.split('')
   } else {
     letters = 'a'.split('')
   }

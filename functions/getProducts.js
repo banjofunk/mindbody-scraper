@@ -11,6 +11,9 @@ exports.handler = async (event, context) => {
   } else {
     letters = 'a'.split('')
   }
-  await sendToQueue(letters, 'getProductsByLetter', session)
+  console.log('letters', letters)
+  for(const letter of letters){
+    await sendToQueue(letter, 'getProductsByLetter', session)
+  }
   return Promise.resolve()
 }

@@ -4,21 +4,22 @@ const fetch = require('node-fetch')
 const cheerio = require('cheerio')
 const parseResp = require('./utils/parseResp')
 const userAgent = 'Mozilla/5.0 AppleWebKit/537.36 Chrome/71.0.3578.98 Safari/537.36'
+const FormData = require('form-data')
 
 let version = 0
 let token, params
 exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
   console.log('event', event)
-  const { url, options, session, parser, respType } = event
+  const { url, options, session, parser, respType, form } = event
   await getToken(session)
-  resp = await fetchWithToken(url, options, token, respType)
+  resp = await fetchWithToken(url, options, token, respType, form)
     .catch(err => Promise.reject(err))
   for (const i of Array(5).fill(0)) {
     if(resp) { break } else {
       console.log('token failed')
       token = await getToken(session, true)
-      resp = await fetchWithToken(url, options, token, respType)
+      resp = await fetchWithToken(url, options, token, respType, form)
         .catch(err => Promise.reject(err))
     }
   }
@@ -26,9 +27,16 @@ exports.handler = async (event, context) => {
   return parser ? parseResp(parser, resp) : resp
 }
 
-const fetchWithToken = async (url, options, token, respType) => {
+const fetchWithToken = async (url, options, token, respType, form) => {
   console.log('url', url)
   if(!options.headers) { options.headers = {} }
+  if(form){
+    const formBody = new FormData()
+    for(const key of Object.keys(form)){
+      formBody.append(key, form[key])
+    }
+    options.body = formBody  
+  }
   options.headers['Cookie'] = token
   options.headers['User-Agent'] = userAgent
   if(respType === 'json'){

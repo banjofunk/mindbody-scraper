@@ -28,6 +28,7 @@ provider:
         - Fn::GetAtt: [ clientsTable, Arn ]
         - Fn::GetAtt: [ pricingDetailsTable, Arn ]
         - Fn::GetAtt: [ productsTable, Arn ]
+        - Fn::GetAtt: [ staffTable, Arn ]
     - Effect: Allow
       Action:
         - logs:*
@@ -108,8 +109,20 @@ functions:
   getClassTypeDetails:
     handler: functions/getClassTypeDetails.handler
     timeout: 90
+  getClassTypeEvents:
+    handler: functions/getClassTypeEvents.handler
+    timeout: 90
+  getClassTypeEventsTeachers:
+    handler: functions/getClassTypeEventsTeachers.handler
+    timeout: 90
   getClassTypes:
     handler: functions/getClassTypes.handler
+    timeout: 90
+  getStaff:
+    handler: functions/getStaff.handler
+    timeout: 90
+  getStaffMember:
+    handler: functions/getStaffMember.handler
     timeout: 90
   getUserProfile:
     handler: functions/getUserProfile.handler
@@ -207,6 +220,19 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: '5'
           WriteCapacityUnits: '5'
+    staffTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: StaffTable
+        AttributeDefinitions:
+          - AttributeName: staffMemberId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: staffMemberId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: '2'
+          WriteCapacityUnits: '2'
     pricingDetailsTable:
       Type: AWS::DynamoDB::Table
       Properties:

@@ -6,11 +6,12 @@ const logger = require('./utils/logger')
 exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false;
   const { item, session } = event
-  await logger(session, `fetching class event users: ${item.id}`)
+  const dynamoId = `${item.scheduleId}_${item.classDate}`
+  await logger(session, `fetching class event users: ${dynamoId}`)
   const url = 'https://clients.mindbodyonline.com/classic/admclslist'
   const query = qs.stringify({
-    pDate: item.date,
-    pClsID: item.id
+    pDate: item.classDate,
+    pClsID: item.scheduleId
   })
   const fetchParams = {
     session,
@@ -19,6 +20,6 @@ exports.handler = async (event, context) => {
     parser: 'classEventUsersParser'
   }
   const students = await mbFetch(fetchParams)
-  await writeToDynamo('classId', {...item, students}, 'ClassEventsTable')
+  await writeToDynamo('classId', {...item, id: dynamoId, students}, 'ClassEventsTable')
   return Promise.resolve()
 }

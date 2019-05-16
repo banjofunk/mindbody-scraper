@@ -124,6 +124,9 @@ functions:
   getStaffMember:
     handler: functions/getStaffMember.handler
     timeout: 90
+  getStaffMemberPayRates:
+    handler: functions/getStaffMemberPayRates.handler
+    timeout: 90
   getUserProfile:
     handler: functions/getUserProfile.handler
     timeout: 90

@@ -19,7 +19,7 @@ exports.handler = async (event, context) => {
     options: {},
     parser: 'classEventUsersParser'
   }
-  const students = await mbFetch(fetchParams)
-  await writeToDynamo('classId', {...item, id: dynamoId, students}, 'ClassEventsTable')
+  const { students, teacherId } = await mbFetch(fetchParams)
+  await writeToDynamo('classId', {...item, id: dynamoId, students, teacherId}, 'ClassEventsTable')
   return Promise.resolve()
 }

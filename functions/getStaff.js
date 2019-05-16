@@ -15,6 +15,11 @@ exports.handler = async (event, context) => {
     parser: 'staffParser'
   }
   const staff = await mbFetch(fetchParams)
-  await sendToQueue(staff, 'getStaffMember', session)
+
+  const queueItems = session.prod 
+    ? staff 
+    : staff.slice(0,10)
+
+  await sendToQueue(queueItems, 'getStaffMember', session)
   return Promise.resolve()
 }

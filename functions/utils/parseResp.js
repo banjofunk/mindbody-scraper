@@ -7,6 +7,8 @@ const parseClassTypeEventsTeachers = require('../parsers/classTypeEventsTeachers
 const parseClassTypes = require('../parsers/classTypes')
 const parseClassType = require('../parsers/classType')
 const parseClassTypeEvents = require('../parsers/classTypeEvents')
+const parseEnrollments = require('../parsers/enrollments')
+const parseEnrollmentDetails = require('../parsers/enrollmentDetails')
 const parseProductsByLetter = require('../parsers/productsByLetter')
 const parseProductsByVariant = require('../parsers/productsByVariant')
 const parseProductDetails = require('../parsers/productDetails')
@@ -37,6 +39,10 @@ module.exports = async (parser, resp) => {
       return parseClassTypeEvents(resp)
     case 'classTypeEventsTeachersParser':
       return parseClassTypeEventsTeachers(resp)
+    case 'enrollmentsParser':
+      return parseEnrollments(resp)
+    case 'enrollmentDetailsParser':
+      return parseEnrollmentDetails(resp)
     case 'ProductsByLetterParser':
       return parseProductsByLetter(resp)
     case 'ProductsByVariantParser':

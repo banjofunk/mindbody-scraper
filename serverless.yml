@@ -29,6 +29,7 @@ provider:
         - Fn::GetAtt: [ pricingDetailsTable, Arn ]
         - Fn::GetAtt: [ productsTable, Arn ]
         - Fn::GetAtt: [ staffTable, Arn ]
+        - Fn::GetAtt: [ enrollmentsTable, Arn ]
     - Effect: Allow
       Action:
         - logs:*
@@ -81,6 +82,12 @@ functions:
     handler: functions/deleteAuthVpc.handler
   getBusinessLocations:
     handler: functions/getBusinessLocations.handler
+    timeout: 90
+  getEnrollments:
+    handler: functions/getEnrollments.handler
+    timeout: 90
+  getEnrollmentDetails:
+    handler: functions/getEnrollmentDetails.handler
     timeout: 90
   getResources:
     handler: functions/getResources.handler
@@ -223,6 +230,19 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: '5'
           WriteCapacityUnits: '5'
+    enrollmentsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: EnrollmentsTable
+        AttributeDefinitions:
+          - AttributeName: enrollmentId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: enrollmentId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: '2'
+          WriteCapacityUnits: '2'
     staffTable:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -258,6 +278,19 @@ resources:
             AttributeType: S
         KeySchema:
           - AttributeName: productId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: '2'
+          WriteCapacityUnits: '2'
+    resourcesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ResourcesTable
+        AttributeDefinitions:
+          - AttributeName: resourceId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: resourceId
             KeyType: HASH
         ProvisionedThroughput:
           ReadCapacityUnits: '2'

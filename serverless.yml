@@ -29,7 +29,10 @@ provider:
         - Fn::GetAtt: [ pricingDetailsTable, Arn ]
         - Fn::GetAtt: [ productsTable, Arn ]
         - Fn::GetAtt: [ staffTable, Arn ]
+        - Fn::GetAtt: [ resourcesTable, Arn ]
+        - Fn::GetAtt: [ locationsTable, Arn ]
         - Fn::GetAtt: [ enrollmentsTable, Arn ]
+        - Fn::GetAtt: [ serviceCategoryVisitTypesTable, Arn ]
     - Effect: Allow
       Action:
         - logs:*
@@ -282,6 +285,19 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: '2'
           WriteCapacityUnits: '2'
+    locationsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: LocationsTable
+        AttributeDefinitions:
+          - AttributeName: locationId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: locationId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: '2'
+          WriteCapacityUnits: '2'
     resourcesTable:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -291,6 +307,19 @@ resources:
             AttributeType: S
         KeySchema:
           - AttributeName: resourceId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: '2'
+          WriteCapacityUnits: '2'
+    serviceCategoryVisitTypesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ServiceCategoryVisitTypesTable
+        AttributeDefinitions:
+          - AttributeName: serviceCategoryVisitTypeId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: serviceCategoryVisitTypeId
             KeyType: HASH
         ProvisionedThroughput:
           ReadCapacityUnits: '2'

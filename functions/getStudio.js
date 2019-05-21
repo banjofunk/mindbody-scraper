@@ -24,8 +24,9 @@ exports.handler = async (event, context) => {
     await ssm.putParameter(ssmParams).promise()
   }
   for(const scraper of scrapers){
-    if(scraper === 'getDateRange'){
-      await sendToQueue({ endDate, startDate }, 'getDateRange', session)
+    if(scraper === 'getSales'){
+      await logger(session, `starting scraper for studio (sales)`)
+      await sendToQueue({ endDate, startDate }, scraper, session)
     }else{
       await sendToQueue(true, scraper, session)
     }

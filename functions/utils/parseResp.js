@@ -14,6 +14,7 @@ const parseProductsByVariant = require('../parsers/productsByVariant')
 const parseProductDetails = require('../parsers/productDetails')
 const parsePricingDetails = require('../parsers/pricingDetails')
 const parsePricings = require('../parsers/pricings')
+const parseSales = require('../parsers/sales')
 const parseStaff = require('../parsers/staff')
 const parseStaffMember = require('../parsers/staffMember')
 const parseStaffMemberPayRate = require('../parsers/staffMemberPayRate')
@@ -53,6 +54,8 @@ module.exports = async (parser, resp) => {
       return parsePricingDetails(resp)
     case 'pricingsParser':
       return parsePricings(resp)
+    case 'salesParser':
+      return parseSales(resp)
     case 'staffParser':
       return parseStaff(resp)
     case 'staffMemberParser':

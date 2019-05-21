@@ -33,6 +33,7 @@ provider:
         - Fn::GetAtt: [ locationsTable, Arn ]
         - Fn::GetAtt: [ enrollmentsTable, Arn ]
         - Fn::GetAtt: [ serviceCategoryVisitTypesTable, Arn ]
+        - Fn::GetAtt: [ salesTable, Arn ]
     - Effect: Allow
       Action:
         - logs:*
@@ -127,6 +128,9 @@ functions:
     timeout: 90
   getClassTypes:
     handler: functions/getClassTypes.handler
+    timeout: 90
+  getSales:
+    handler: functions/getSales.handler
     timeout: 90
   getStaff:
     handler: functions/getStaff.handler
@@ -307,6 +311,19 @@ resources:
             AttributeType: S
         KeySchema:
           - AttributeName: resourceId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: '2'
+          WriteCapacityUnits: '2'
+    salesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: SalesTable
+        AttributeDefinitions:
+          - AttributeName: saleId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: saleId
             KeyType: HASH
         ProvisionedThroughput:
           ReadCapacityUnits: '2'

@@ -4,6 +4,8 @@ const moment = require('moment')
 
 module.exports = (resp) => {
   const $ = cheerio.load(resp)
+  const err = $('.error-main-header').length
+  if(err){return false}
   const createDateStr = $('#contactloginfo .textOnly').text()
   const createdOn = moment(createDateStr, "MMMM D, YYYY").format('MM/DD/YYYY')
   const relationships = $('#relationships .smallTextBlack').get().map(r => {

@@ -31,6 +31,7 @@ exports.handler = async (event, context) => {
 
   await sendToQueue(filteredUsers, 'getUserProfile', session)
   await logger(session, `total users: ${users.length}`)
+  await logger(session, `total users with id: ${users.filter(user => user.id).length}`)
   await logger(session, `finished users scraper`)
   return Promise.resolve()
 }

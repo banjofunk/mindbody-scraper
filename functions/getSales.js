@@ -1,9 +1,6 @@
-const mbFetch = require('./utils/mbFetch')
-const logger = require('./utils/logger')
-const sendToQueue = require('./utils/sendToQueue')
-const writeToDynamo = require('./utils/writeToDynamo')
 const moment = require('moment')
 const qs = require('querystring')
+const { mbFetch, logger, sendToQueue, writeToDynamo } = require('./utils')
 
 exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false

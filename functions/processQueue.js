@@ -1,18 +1,17 @@
 const AWS = require('aws-sdk')
 const lambda = new AWS.Lambda()
+const dig = require('./utils/dig')
 
 exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
   const records = event.Records
-  console.log('records: ', records.length)
-  for( const record of records){
-    const { lambdaName, item, session } = JSON.parse(record.body)
-    console.log('invoking: ', lambdaName)
-    params = {
-      FunctionName: `mindbody-scraper-${process.env.stage}-${lambdaName}`,
-      Payload: JSON.stringify({ item, session })
-    }
-    await lambda.invoke(params).promise()
+  const record = dig(event, 'Records', '0')
+  if(!record){return Promise.reject()}
+  const { lambdaName, item, session } = JSON.parse(record.body)
+  console.log('invoking: ', lambdaName)
+  const params = {
+    FunctionName: `mindbody-scraper-${process.env.stage}-${lambdaName}`,
+    Payload: JSON.stringify({ item, session })
   }
-  return Promise.resolve()
+  return lambda.invoke(params).promise()
 }

@@ -13,7 +13,7 @@ exports.handler = async (event, context) => {
   console.log('event', event)
   const { url, options, session, parser, respType, form } = event
   await getToken(session)
-  resp = await fetchWithToken(url, options, token, respType, form)
+  let resp = await fetchWithToken(url, options, token, respType, form)
     .catch(err => Promise.reject(err))
   for (const i of Array(5).fill(0)) {
     if(resp) { break } else {
@@ -56,6 +56,10 @@ const fetchWithToken = async (url, options, token, respType, form) => {
         //   return Promise.reject(error.text())
         // }
         return resp
+      })
+      .catch(err => {
+        console.log('err', err)
+        return Promise.reject()
       })
   }
 }

@@ -21,6 +21,7 @@ provider:
       Action:
         - dynamodb:*
       Resource:
+        - Fn::GetAtt: [ appointmentsTable, Arn ]
         - Fn::GetAtt: [ appointmentTypesTable, Arn ]
         - Fn::GetAtt: [ classEventsTable, Arn ]
         - Fn::GetAtt: [ classCategoriesTable, Arn ]
@@ -64,7 +65,7 @@ functions:
   mbFetch:
     handler: functions/mbFetch.handler
     timeout: 90
-    reservedConcurrency: 8
+    reservedConcurrency: 6
     vpc: ${self:custom.vpc}
   getToken:
     handler: functions/getToken.handler
@@ -74,7 +75,7 @@ functions:
   processQueue:
     handler: functions/processQueue.handler
     timeout: 60
-    reservedConcurrency: 8
+    reservedConcurrency: 6
     events:
       - sqs:
           batchSize: 1
@@ -84,6 +85,12 @@ functions:
     handler: functions/createAuthVpc.handler
   deleteAuthVpc:
     handler: functions/deleteAuthVpc.handler
+  getAppointments:
+    handler: functions/getAppointments.handler
+    timeout: 90
+  getAppointmentTypes:
+    handler: functions/getAppointmentTypes.handler
+    timeout: 90
   getBusinessLocations:
     handler: functions/getBusinessLocations.handler
     timeout: 90
@@ -107,9 +114,6 @@ functions:
     timeout: 90
   getProducts:
     handler: functions/getProducts.handler
-    timeout: 90
-  getAppointmentTypes:
-    handler: functions/getAppointmentTypes.handler
     timeout: 90
   getPricingDetails:
     handler: functions/getPricingDetails.handler
@@ -141,6 +145,12 @@ functions:
   getStaffMemberPayRates:
     handler: functions/getStaffMemberPayRates.handler
     timeout: 90
+  getStaffMemberApptAvailability:
+    handler: functions/getStaffMemberApptAvailability.handler
+    timeout: 90
+  getStaffMemberApptPay:
+    handler: functions/getStaffMemberApptPay.handler
+    timeout: 90
   getUserProfile:
     handler: functions/getUserProfile.handler
     timeout: 90
@@ -171,6 +181,19 @@ resources:
       Type: AWS::Logs::LogGroup
       Properties:
         RetentionInDays: 7
+    appointmentsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: AppointmentsTable
+        AttributeDefinitions:
+          - AttributeName: appointmentsId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: appointmentsId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: '2'
+          WriteCapacityUnits: '2'
     appointmentTypesTable:
       Type: AWS::DynamoDB::Table
       Properties:

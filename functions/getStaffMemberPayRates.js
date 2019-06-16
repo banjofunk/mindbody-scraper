@@ -1,6 +1,6 @@
 const mbFetch = require('./utils/mbFetch')
 const logger = require('./utils/logger')
-const writeToDynamo = require('./utils/writeToDynamo')
+const sendToQueue = require('./utils/sendToQueue')
 const qs = require('querystring')
 
 exports.handler = async (event, context) => {
@@ -18,6 +18,7 @@ exports.handler = async (event, context) => {
     parser: 'staffMemberPayRateParser'
   }
   const payRates = await mbFetch(fetchParams)
-  await writeToDynamo('staffMemberId', {...item, payRates}, 'StaffTable')
+  await sendToQueue({...item, payRates}, 'getStaffMemberApptPay', session)
+
   return Promise.resolve()
 }

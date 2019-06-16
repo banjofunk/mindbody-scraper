@@ -18,6 +18,8 @@ const parseSales = require('../parsers/sales')
 const parseStaff = require('../parsers/staff')
 const parseStaffMember = require('../parsers/staffMember')
 const parseStaffMemberPayRate = require('../parsers/staffMemberPayRate')
+const parseStaffMemberApptAvailability = require('../parsers/staffMemberApptAvailability')
+const parseStaffMemberApptPay = require('../parsers/staffMemberApptPay')
 
 module.exports = async (parser, resp) => {
   console.log('parser:', parser)
@@ -62,6 +64,10 @@ module.exports = async (parser, resp) => {
       return parseStaffMember(resp)
     case 'staffMemberPayRateParser':
       return parseStaffMemberPayRate(resp)
+    case 'staffMemberApptAvailabilityParser':
+      return parseStaffMemberApptAvailability(resp)
+    case 'staffMemberApptPayParser':
+      return parseStaffMemberApptPay(resp)
     default:
       return resp
   }

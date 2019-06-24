@@ -1,4 +1,5 @@
 const parseAppointmentTypes = require('../parsers/appointmentTypes')
+const parseAutopay = require('../parsers/autopay')
 const parseUsers = require('../parsers/users')
 const parseUserProfile = require('../parsers/userProfile')
 const parseClassEvents = require('../parsers/classEvents')
@@ -20,6 +21,8 @@ const parseStaffMember = require('../parsers/staffMember')
 const parseStaffMemberPayRate = require('../parsers/staffMemberPayRate')
 const parseStaffMemberApptAvailability = require('../parsers/staffMemberApptAvailability')
 const parseStaffMemberApptPay = require('../parsers/staffMemberApptPay')
+const parseContractType = require('../parsers/contractType')
+const parseContractTypes = require('../parsers/contractTypes')
 
 module.exports = async (parser, resp) => {
   console.log('parser:', parser)
@@ -28,6 +31,8 @@ module.exports = async (parser, resp) => {
       return parseUsers(resp)
     case 'userProfileParser':
       return parseUserProfile(resp)
+    case 'autopayParser':
+      return parseAutopay(resp)
     case 'appointmentTypesParser':
       return parseAppointmentTypes(resp)
     case 'classEventsParser':
@@ -68,6 +73,10 @@ module.exports = async (parser, resp) => {
       return parseStaffMemberApptAvailability(resp)
     case 'staffMemberApptPayParser':
       return parseStaffMemberApptPay(resp)
+    case 'contractTypeParser':
+      return parseContractType(resp)
+    case 'contractTypesParser':
+      return parseContractTypes(resp)
     default:
       return resp
   }

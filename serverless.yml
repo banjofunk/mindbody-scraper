@@ -23,9 +23,11 @@ provider:
       Resource:
         - Fn::GetAtt: [ appointmentsTable, Arn ]
         - Fn::GetAtt: [ appointmentTypesTable, Arn ]
+        - Fn::GetAtt: [ autopayTable, Arn ]
         - Fn::GetAtt: [ classEventsTable, Arn ]
         - Fn::GetAtt: [ classCategoriesTable, Arn ]
         - Fn::GetAtt: [ classTypesTable, Arn ]
+        - Fn::GetAtt: [ contractTypesTable, Arn ]
         - Fn::GetAtt: [ clientsTable, Arn ]
         - Fn::GetAtt: [ pricingDetailsTable, Arn ]
         - Fn::GetAtt: [ productsTable, Arn ]
@@ -91,6 +93,9 @@ functions:
   getAppointmentTypes:
     handler: functions/getAppointmentTypes.handler
     timeout: 90
+  getAutopay:
+    handler: functions/getAutopay.handler
+    timeout: 90
   getBusinessLocations:
     handler: functions/getBusinessLocations.handler
     timeout: 90
@@ -133,6 +138,12 @@ functions:
   getClassTypes:
     handler: functions/getClassTypes.handler
     timeout: 90
+  getContractType:
+    handler: functions/getContractType.handler
+    timeout: 90
+  getContractTypes:
+    handler: functions/getContractTypes.handler
+    timeout: 90
   getSales:
     handler: functions/getSales.handler
     timeout: 90
@@ -156,12 +167,6 @@ functions:
     timeout: 90
   getUsers:
     handler: functions/getUsers.handler
-    timeout: 90
-  getDateRange:
-    handler: functions/getDateRange.handler
-    timeout: 90
-  getClassEvents:
-    handler: functions/getClassEvents.handler
     timeout: 90
   getClassEventUsers:
     handler: functions/getClassEventUsers.handler
@@ -207,6 +212,19 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: '2'
           WriteCapacityUnits: '2'
+    autopayTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: AutopayTable
+        AttributeDefinitions:
+          - AttributeName: autopayId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: autopayId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: '2'
+          WriteCapacityUnits: '2'
     classEventsTable:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -242,6 +260,19 @@ resources:
             AttributeType: S
         KeySchema:
           - AttributeName: classTypeId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: '2'
+          WriteCapacityUnits: '2'
+    contractTypesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ContractTypesTable
+        AttributeDefinitions:
+          - AttributeName: contractTypeId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: contractTypeId
             KeyType: HASH
         ProvisionedThroughput:
           ReadCapacityUnits: '2'

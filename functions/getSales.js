@@ -7,7 +7,7 @@ exports.handler = async (event, context) => {
   const { session, item } = event
   const format = 'MM/DD/YYYY'
   const startDate = item.startDate || moment().format(format)
-  const endDate = session.prod ? "01/01/1900" : item.endDate
+  const endDate = session.prod ? "01/01/2007" : item.endDate
   await logger(session, `starting sales scraper: ${item.startDate}`)
 
   const url = 'https://clients.mindbodyonline.com/Report/Sales/Sales/Generate?reportID=undefined'

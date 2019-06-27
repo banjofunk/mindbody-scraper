@@ -66,18 +66,18 @@ functions:
     vpc: ${self:custom.vpc}
   mbFetch:
     handler: functions/mbFetch.handler
-    timeout: 90
-    reservedConcurrency: 6
+    timeout: 180
+    reservedConcurrency: 4
     vpc: ${self:custom.vpc}
   getToken:
     handler: functions/getToken.handler
-    timeout: 90
+    timeout: 180
     reservedConcurrency: 2
     vpc: ${self:custom.vpc}
   processQueue:
     handler: functions/processQueue.handler
-    timeout: 60
-    reservedConcurrency: 6
+    timeout: 180
+    reservedConcurrency: 4
     events:
       - sqs:
           batchSize: 1
@@ -89,95 +89,100 @@ functions:
     handler: functions/deleteAuthVpc.handler
   getAppointments:
     handler: functions/getAppointments.handler
-    timeout: 90
+    timeout: 180
   getAppointmentTypes:
     handler: functions/getAppointmentTypes.handler
-    timeout: 90
+    timeout: 180
   getAutopay:
     handler: functions/getAutopay.handler
-    timeout: 90
+    timeout: 180
   getBusinessLocations:
     handler: functions/getBusinessLocations.handler
-    timeout: 90
+    timeout: 180
   getEnrollments:
     handler: functions/getEnrollments.handler
-    timeout: 90
+    timeout: 180
   getEnrollmentDetails:
     handler: functions/getEnrollmentDetails.handler
-    timeout: 90
+    timeout: 180
   getResources:
     handler: functions/getResources.handler
-    timeout: 90
+    timeout: 180
   getProductsByLetter:
     handler: functions/getProductsByLetter.handler
-    timeout: 90
+    timeout: 180
   getProductsByVariantId:
     handler: functions/getProductsByVariantId.handler
-    timeout: 90
+    timeout: 180
   getProductDetails:
     handler: functions/getProductDetails.handler
-    timeout: 90
+    timeout: 180
   getProducts:
     handler: functions/getProducts.handler
-    timeout: 90
+    timeout: 180
   getPricingDetails:
     handler: functions/getPricingDetails.handler
-    timeout: 90
+    timeout: 180
   getPricing:
     handler: functions/getPricing.handler
-    timeout: 90
+    timeout: 180
   getClassTypeDetails:
     handler: functions/getClassTypeDetails.handler
-    timeout: 90
+    timeout: 180
   getClassTypeEvents:
     handler: functions/getClassTypeEvents.handler
-    timeout: 90
+    timeout: 180
   getClassTypeEventsTeachers:
     handler: functions/getClassTypeEventsTeachers.handler
-    timeout: 90
+    timeout: 180
   getClassTypes:
     handler: functions/getClassTypes.handler
-    timeout: 90
+    timeout: 180
   getContractType:
     handler: functions/getContractType.handler
-    timeout: 90
+    timeout: 180
   getContractTypes:
     handler: functions/getContractTypes.handler
-    timeout: 90
+    timeout: 180
   getSales:
     handler: functions/getSales.handler
-    timeout: 90
+    timeout: 180
+    reservedConcurrency: 4
+  getSalesRange:
+    handler: functions/getSalesRange.handler
+    timeout: 180
+    reservedConcurrency: 1
   getStaff:
     handler: functions/getStaff.handler
-    timeout: 90
+    timeout: 180
   getStaffMember:
     handler: functions/getStaffMember.handler
-    timeout: 90
+    timeout: 180
   getStaffMemberPayRates:
     handler: functions/getStaffMemberPayRates.handler
-    timeout: 90
+    timeout: 180
   getStaffMemberApptAvailability:
     handler: functions/getStaffMemberApptAvailability.handler
-    timeout: 90
+    timeout: 180
   getStaffMemberApptPay:
     handler: functions/getStaffMemberApptPay.handler
-    timeout: 90
+    timeout: 180
   getUserProfile:
     handler: functions/getUserProfile.handler
-    timeout: 90
+    timeout: 180
   getUsers:
     handler: functions/getUsers.handler
-    timeout: 90
+    timeout: 180
   getClassEventUsers:
     handler: functions/getClassEventUsers.handler
-    timeout: 90
+    timeout: 180
 resources:
   Resources:
     scraperQueue:
       Type: "AWS::SQS::Queue"
       Properties:
         QueueName: "ScraperQueue"
-        VisibilityTimeout: 60
+        VisibilityTimeout: 180
     authStack:
       Type: AWS::CloudFormation::Stack
       Properties:

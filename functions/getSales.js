@@ -6,14 +6,14 @@ exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
   const { session, item } = event
   const format = 'MM/DD/YYYY'
-  const startDate = item.startDate || moment().format(format)
-  const endDate = session.prod ? "01/01/2007" : item.endDate
-  await logger(session, `starting sales scraper: ${item.startDate}`)
+  const startDate = item.startDate || moment().subtract(1, 'month').format(format)
+  const endDate = item.endDate || moment().format(format)
+  await logger(session, `starting sales scraper: ${item.endDate}`)
 
   const url = 'https://clients.mindbodyonline.com/Report/Sales/Sales/Generate?reportID=undefined'
   const headers = {"Content-Type":"application/x-www-form-urlencoded"}
-  const startParam = moment(startDate, format).startOf('month').format(format)
-  const endParam = moment(startDate, format).endOf('month').format(format)
+  const startParam = moment(endDate, format).startOf('month').format(format)
+  const endParam = moment(endDate, format).endOf('month').format(format)
   const body = salesQueryParams(startParam, endParam)
 
   const fetchParams = {
@@ -25,17 +25,15 @@ exports.handler = async (event, context) => {
   const sales = await mbFetch(fetchParams)
   if(typeof(sales) === 'object'){
     await logger(session, `scraped ${sales.length} sales records`)
-    await Promise.all(sales.map(sale => writeToDynamo('saleId', sale, 'SalesTable')))
+    const salesMonth = { id: startParam, sales }
+    await writeToDynamo('saleId', salesMonth, 'SalesTable')
+    // await Promise.all(sales.map(sale => writeToDynamo('saleId', sale, 'SalesTable')))
   }else{
     await logger(session, `scraper responded with: ${JSON.stringify(sales)}`)
   }
 
-  if(!sales || moment(startDate, format).startOf('month') <= moment(endDate, format)){
-    await logger(session, `sales scraper is complete`)
-  } else {
-    const start = moment(startParam, format).subtract(1, 'month').format(format)
-    await logger(session, `queuing sales: ${start}`)
-    await sendToQueue({ endDate, startDate: start }, 'getSales', session)
+  if(!sales && !item.retry){
+    await sendToQueue({ endDate, startDate, retry: true }, 'getSales', session)
   }
   return Promise.resolve()
 }
